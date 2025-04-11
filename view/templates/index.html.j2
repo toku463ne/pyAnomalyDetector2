@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Anomaly charts</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center">Anomaly charts</h1>
+        <ul class="nav nav-tabs" id="tablist0" role="tablist">
+            {% for category in categories %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="{{ category.id }}" data-bs-toggle="tab" data-bs-target="#{{ category.id }}" type="button" role="tab" aria-controls="{{ category.id }}" aria-selected="true">{{ category.id }}</button>
+                </li>
+            {% endfor %}
+        </ul>
+        <div class="tab-content mt-4" id="tabContent0">
+            <ul class="nav nav-tabs" id="tablist1" role="tablist">
+                {% for category in categories %}
+                    <ul class="nav nav-tabs" id="{{ category.id }}" role="tablist">
+                        {% for chart_group in category.chart_groups %}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="{{ chart_group.id }}" data-bs-toggle="tab" data-bs-target="#{{ chart_group.id }}" type="button" role="tab" aria-controls="{{ chart_group.id }}" aria-selected="true">{{ chart_group.id }}</button>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="tab-content mt-4" id="{{ category.id }}">
+                        {% for chart_group in category.chart_groups %}
+                            <div class="tab-content" id="{{ chart_group.id }}">
+                                {{ chart_group.charts }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %} 
+            </ul>
+        </div>
+
+        <div class="text-center mt-4">
+            <button id="refreshButton" class="btn btn-primary">Refresh Charts</button>
+        </div>
+        <script>
+            document.getElementById('refreshButton').addEventListener('click', function() {
+                location.reload();
+            });
+        </script>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

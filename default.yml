@@ -1,0 +1,79 @@
+##################################################
+#  Logging
+##################################################
+logging:
+  enabled: false
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "app.log"
+  log_dir: "{{ HOME }}/anomdec/logs"
+
+
+##################################################
+#  admdb: PostgreSQL database for AnomDec admin
+##################################################
+admdb:
+  host: localhost
+  user: anomdec_adm
+  password: "{{ ADM_DB_PASSWORD }}"
+  dbname: anomdec
+  port: 5432
+
+
+##################################################
+#  trends: Configuration for trend analysis
+##################################################
+trends_interval: 86400
+trends_retention: 14
+trends_min_count: 14
+
+##################################################
+#  history: Configuration for history analysis
+##################################################
+history_interval: 600
+history_retention: 18
+history_recent_retention: 6
+
+
+##################################################
+#  data_sources
+##################################################
+data_sources:
+  csv_source:
+    data_dir: "testsdata/csv/20250214_1100"
+    type: csv
+
+##################################################
+#  views
+##################################################
+view_sources:
+  flask_view:
+    type: flask
+    layout: 
+      chart_width: 400
+      chart_height: 400
+      max_vertical_charts: 4
+      max_horizontal_charts: 4
+
+
+##################################################
+#  other params
+##################################################
+batch_size: 100
+
+##################################################
+#  clustering default params
+##################################################
+dbscan:
+  jaccaard_eps: 0.2
+  corr_eps: 0.4
+  min_samples: 2
+  detection_period: 43200
+  sigma: 2.0
+  max_iterations: 100
+
+
+##################################################
+#  anomaly detection params
+##################################################
+
