@@ -14,12 +14,23 @@ class Model:
         else:
             self.table_name = f"{data_source_name}.{self.name}"
         self.db = PostgreSqlDB(config_loader.conf['admdb'])
-        self.db.create_table(self.table_name, self.sql_template)
         self.batch_size = config_loader.conf["batch_size"]
+        self.create_table()
 
     def truncate(self):
         self.db.exec_sql(f"TRUNCATE TABLE {self.table_name};")
         
+    def drop(self):
+        self.db.exec_sql(f"DROP TABLE IF EXISTS {self.table_name};")
+    
+    def create_table(self):
+        self.db.create_table(self.table_name, self.sql_template)
+        
+
+    def initialize(self):
+        self.drop()
+        self.create_table()
+    
     def check_conn(self) -> bool:
         ok = self.db.table_exists(self.name, self.data_source_name)
         if ok == False:

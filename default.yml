@@ -49,6 +49,9 @@ data_sources:
 view_sources:
   flask_view:
     type: flask
+    host: "localhost"
+    port: 5000
+    debug: false
     layout: 
       chart_width: 400
       chart_height: 400
