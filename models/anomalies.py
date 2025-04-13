@@ -6,7 +6,7 @@ from models.model import Model
 class AnomaliesModel(Model):
     sql_template = "anomalies"
     name = sql_template
-    fields = ["itemid", "created", "group_name", "hostid", "clusterid", "host_name", "item_name"]
+    fields = ["itemid", "created", "group_name", "hostid", "clusterid", "host_name", "item_name", "trend_mean", "trend_std"]
 
     def get_data(self, where_conds: List[str] = []) -> pd.DataFrame:
         sql = f"SELECT * FROM {self.table_name}"
@@ -36,11 +36,12 @@ class AnomaliesModel(Model):
         for _, row in data.iterrows():
             item_name = row.item_name.replace("'", "")
             sql = f"""INSERT INTO {self.table_name} 
-    (itemid, created, hostid, clusterid, group_name, host_name, item_name) 
+    (itemid, created, hostid, clusterid, group_name, host_name, item_name, trend_mean, trend_std) 
     VALUES 
     ({row.itemid}, {row.created}, 
      {row.hostid}, {row.clusterid}, 
-     '{row.group_name}', '{row.host_name}', '{item_name}')"""
+     '{row.group_name}', '{row.host_name}', '{item_name}', {row.trend_mean}, 
+     {row.trend_std})"""
             self.db.exec_sql(sql)
 
     def update_clusterid(self, clusters: Dict):

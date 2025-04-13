@@ -4,3 +4,4 @@ admdb:
   password: "{{ ADM_DB_PASSWORD }}"
   dbname: anomdec_test
   port: 5432
+  schema: test

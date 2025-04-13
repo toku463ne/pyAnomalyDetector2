@@ -18,8 +18,14 @@ class PostgreSqlDB:
 			config["dbname"],
 			config["user"],
 			config["password"])
-		conn =  psycopg2.connect(conn_string)
+		conn = psycopg2.connect(conn_string)
 		conn.autocommit = True
+
+		# Connect to the specified schema
+		schema = config["schema"]
+		cur = conn.cursor()
+		cur.execute(f"SET search_path TO {schema};")
+
 		return conn
 	
 
