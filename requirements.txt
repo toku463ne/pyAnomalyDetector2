@@ -15,3 +15,4 @@ plotly
 plotly-express
 fastdtw
 debugpy
+streamlit

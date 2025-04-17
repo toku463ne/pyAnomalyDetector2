@@ -31,6 +31,8 @@ class AnomaliesModel(Model):
         sql = f"SELECT max(created) FROM {self.table_name}"
         (epoch,) = self.db.select1rec(sql)
         return epoch
+    
+
 
     def insert_data(self, data: pd.DataFrame):
         for _, row in data.iterrows():

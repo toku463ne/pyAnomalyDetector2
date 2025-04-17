@@ -29,8 +29,9 @@ class DataGetter:
 
     # function to get dict of itemId to hostId from the data source.
     @abstractmethod
-    def get_item_host_dict(self, itemIds: List[int]=[]) -> Dict[int, int]:
-        return {}
+    def get_items_details(self, itemIds: List[int]) -> pd.DataFrame:
+        # ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
+        pass
 
 
     # function to get data from the data source. 

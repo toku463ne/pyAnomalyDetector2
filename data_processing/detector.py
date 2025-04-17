@@ -8,7 +8,7 @@ import utils
 import utils.config_loader as config_loader
 import data_getter
 from models.models_set import ModelsSet
-from models.history_stats import HistoryStatsModel
+from data_processing.history_stats import HistoryStats
 
 
 
@@ -20,9 +20,11 @@ def log(msg, level=logging.INFO):
 class Detector:
     def __init__(self, data_source_name, data_source: Dict, 
                  itemIds: List[int] = [], 
-                 max_itemIds: int = 0
+                 max_itemIds: int = 0,
+                skip_history_update: bool = False,
                  ):
         config = config_loader.conf
+        self.skip_history_update = skip_history_update
         self.batch_size = config['batch_size']
         self.detect1_lambda_threshold = config['detect1_lambda_threshold']
         self.trends_min_count = config['trends_min_count']
@@ -62,7 +64,10 @@ class Detector:
         startep = endep - history_retention * history_interval
         
         if initialize:
-            ms.initialize()
+            ms.history.truncate()
+            ms.history_stats.truncate()
+            ms.history_updates.truncate()
+            ms.anomalies.truncate()
         
 
         # only itemIds existing in trends_stats table
@@ -84,13 +89,18 @@ class Detector:
         else:
             diff_startep = startep
 
-        hs = HistoryStatsModel(data_source=self.data_source, 
-                          itemIds=itemIds, 
-                          max_itemIds=self.max_itemIds)
+        hs = HistoryStats(
+                            data_source_name=self.data_source_name,
+                            data_source=self.data_source, 
+                            itemIds=itemIds, 
+                            max_itemIds=self.max_itemIds)
         if self.skip_history_update == False:
             #ms.history.truncate()
             log(f"hs.update_stats({startep}, {diff_startep}, {endep}, {oldstartep})")
             hs.update_stats(startep, diff_startep, endep, oldstartep)
+
+        # update history_updates table
+        ms.history_updates.upsert_updates(startep, endep)
 
 
         
@@ -185,3 +195,31 @@ class Detector:
                         itemIds.remove(itemId)
         
         return itemIds
+    
+
+    def insert_anomalies(self, itemIds: List[int], created: int):
+        dg = self.dg
+        ms = self.ms
+        df = dg.get_items_details(itemIds)
+        # df.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
+
+        # get trends stats
+        trends_stats = ms.trends_stats.read_stats(itemIds)
+        trends_stats = trends_stats[['itemid', 'mean', 'std']]
+        # merge with df
+        df = pd.merge(df, trends_stats, on='itemid', how='inner')
+        # rename columns
+        df.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name', 'trend_mean', 'trend_std']
+
+        df['created'] = created
+        df['clusterid'] = -1
+        df['hostid'] = df['hostid'].astype(int)
+        df['itemid'] = df['itemid'].astype(int)
+        df['group_name'] = df['group_name'].astype(str)
+        df['host_name'] = df['host_name'].astype(str)
+        df['item_name'] = df['item_name'].astype(str)
+        df['trend_mean'] = df['trend_mean'].astype(float)
+        df['trend_std'] = df['trend_std'].astype(float)
+        df['created'] = df['created'].astype(int)
+        
+        ms.anomalies.insert_data(df)

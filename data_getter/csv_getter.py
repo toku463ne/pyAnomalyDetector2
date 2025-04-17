@@ -147,21 +147,15 @@ class CsvGetter(DataGetter):
         return groups
     
     
-    def get_item_details(self, itemIds: List[int]) -> Dict:
-        items = {}
-        # open items.csv.gz
-        with gzip.open(os.path.join(self.data_dir, self.items_filename), 'rt') as f:
-            csvreader = csv.DictReader(f)
-            for row in csvreader:
-                itemId = int(row['itemid'])
-                if itemId not in itemIds:
-                    continue
-                items[itemId] = {
-                    "hostid": int(row['hostid']),
-                    "host_name": row.get('host_name', ''),
-                    "item_name": row.get('item_name', '')
-                }
-        return items
+    def get_items_details(self, itemIds: List[int]) -> pd.DataFrame:
+        # open items.csv.gz into dataframe
+        df = pd.read_csv(os.path.join(self.data_dir, self.items_filename), compression='gzip')
+        df.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
+        # filter by itemIds
+        if len(itemIds) > 0:
+            df = df[df['itemid'].isin(itemIds)]
+
+        return df
     
 
     def get_item_host_dict(self, itemIds: List[int]=[]) -> Dict[int, int]:

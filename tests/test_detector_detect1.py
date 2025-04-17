@@ -31,7 +31,7 @@ class TestDetector(unittest.TestCase):
             
 
     def test_history_stats(self):
-        name = 'test_history_stats'
+        name = 'test_detect1'
         ms = ModelsSet(name)
         ms.initialize()
         config = config_loader.conf
@@ -41,26 +41,24 @@ class TestDetector(unittest.TestCase):
                 'data_dir': "testdata/csv/20250214_1100",
                 'type': 'csv'
             }
+        data_source = config['data_sources'][name]
         
-        itemIds = [59888,  93281,  94003, 110309, 141917, 217822]
+        itemIds = [59888, 93281, 94003, 110309, 141917, 217822, 236160, 217825, 270793, 270797, 217823]
 
-        endep = 1739505557 - 3600*24*2
+        endep = 1739505598 - 3600*24*3
         trends_stats.update_stats(config, endep, 0, itemIds=itemIds, initialize=True)
         
-        # first data load
-        endep = 1739505557 - 600*18*2
-        self.run_update_test(name, 6, config, endep, itemIds, True)
-        
-        
+                
         # second data load
-        endep = 1739505557 - 600*18
-        self.run_update_test(name, 6, config, endep, itemIds, False)
-
-        # 3rd data load: remove 1 item and add 1 item
-        itemIds = [93281,  94003, 110309, 141917, 217822, 217823]
-        endep = 1739505557
-        self.run_update_test(name, 7, config, endep, itemIds, False)
+        endep = 1739505598 - 600*18
         
+        d = Detector(name, data_source, itemIds)
+        d.update_history_stats(endep, initialize=True)
+
+        anomaly_itemIds = d.detect1()
+        self.assertIsNotNone(anomaly_itemIds)
+        self.assertGreater(len(anomaly_itemIds), 0)
+
 
 
 if __name__ == '__main__':

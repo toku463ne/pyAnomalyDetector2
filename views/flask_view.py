@@ -23,23 +23,29 @@ default_chart_categories = {
 }
 
 class FlaskView(View):
-    def __init__(self, config: Dict, data_sources: Dict) -> None:
-        self.app = Flask(__name__, template_folder=config.get("template_dir", "templates"))
-        self.config = config
-        self.host = config.get("host", "0.0.0.0")
-        self.port = config.get("port", 5000)
-        self.debug = config.get("debug", False)
-        self.trend_start = config.get("trend_start", 0)
-        self.history_start = config.get("history_start", 0)
-        self.history_end = config.get("history_end", 0)
-        self.itemIds = config.get("itemids", [])
-        self.group_names = config.get("group_names", [])
-        self.chart_categories = config.get("chart_categories", default_chart_categories)
-        self.tmp_dir = config.get("tmp_dir", "tmp")
+    def __init__(self, config: Dict, view_source: Dict, data_sources: Dict) -> None:
+        self.app = Flask(__name__, template_folder=view_source.get("template_dir", "templates"))
+        self.trends_interval = config["trends_interval"]
+        self.trends_retention = config["trends_retention"]
+        self.history_interval = config["history_interval"]
+        self.history_retention = config["history_retention"]
+
+
+        self.view_source = view_source
+        self.host = view_source.get("host", "0.0.0.0")
+        self.port = view_source.get("port", 5000)
+        self.debug = view_source.get("debug", False)
+        #self.trend_start = view_source.get("trend_start", 0)
+        #self.history_start = view_source.get("history_start", 0)
+        #self.history_end = view_source.get("history_end", 0)
+        self.itemIds = view_source.get("itemids", [])
+        self.group_names = view_source.get("group_names", [])
+        self.chart_categories = view_source.get("chart_categories", default_chart_categories)
+        self.tmp_dir = view_source.get("tmp_dir", "tmp")
         if not os.path.exists(self.tmp_dir):
             os.makedirs(self.tmp_dir)
         
-        layout = config["layout"]
+        layout = view_source["layout"]
         self.max_vertical_charts = layout.get("max_vertical_charts", 5)
         self.max_horizontal_charts = layout.get("max_horizontal_charts", 3)
         self.max_charts = self.max_vertical_charts * self.max_horizontal_charts
@@ -47,9 +53,7 @@ class FlaskView(View):
         self.chart_height = layout.get("chart_height", 200)
         self.chart_type = layout.get("chart_type", "line")
         self.data_sources = data_sources
-        self.chart_type = layout.get("chart_type", "line")        
-        
-
+ 
     # generate chart from metric data
     # df: DataFrame with columns ['itemid', 'clock', 'value']
     def _generate_charts_in_group(self, df: pd.DataFrame, properties: Dict) -> str: 
@@ -58,7 +62,7 @@ class FlaskView(View):
             rows=self.max_vertical_charts, 
             cols=self.max_horizontal_charts, 
             subplot_titles=[
-            f"{properties[itemId]['host_name'][:30]}<br>{properties[itemId]['item_name'][:30]}" 
+            f"{itemId}<br>{properties[itemId]['host_name'][:30]}<br>{properties[itemId]['item_name'][:30]}" 
             for itemId in itemIds[:self.max_horizontal_charts * self.max_vertical_charts]
             ]
         )
@@ -74,15 +78,16 @@ class FlaskView(View):
                     spikemode="across",
                     spikesnap="cursor",
                     spikedash="dot",
-                    matches="x" if axis.startswith('xaxis') else "y"  # Synchronize panning across all charts
+                    matches="x" if axis.startswith('xaxis') else None  # Synchronize panning only across x-axis
                 )
-                #showticklabels=False # to hide tick labels
+            
 
         for i, itemId in enumerate(itemIds):
             item_df = df[df['itemid'] == itemId]
             item_df['clock'] = pd.to_datetime(item_df['clock'], unit='s').dt.strftime("%m-%d %H")
             row = (i // self.max_horizontal_charts) + 1
             col = (i % self.max_horizontal_charts) + 1
+
 
             fig.add_trace(
             go.Scatter(
@@ -95,10 +100,12 @@ class FlaskView(View):
             col=col
             )
 
+
+
         fig.update_layout(
             height=self.chart_height * self.max_vertical_charts,
             width=self.chart_width * self.max_horizontal_charts,
-            showlegend=False
+            showlegend=False,
         )
 
         chart_html = pio.to_html(fig, full_html=False)
@@ -116,6 +123,12 @@ class FlaskView(View):
                 data = ms.anomalies.get_data([f"itemid in ({','.join(map(str, self.itemIds))})"])
             else:
                 data = ms.anomalies.get_data()
+
+            # max of created
+            endep = data["created"].max()
+            trend_start = endep - self.trends_retention * self.trends_interval
+            history_start = endep - self.history_retention * self.history_interval
+            history_end = endep
 
             # get properties group_name, host_name, item_name from data
             pdata = data[["group_name", "host_name", "item_name", "itemid"]]
@@ -137,8 +150,8 @@ class FlaskView(View):
                     continue
 
                 dg = data_getter.get_data_getter(data_source)
-                t_df = dg.get_trends_data(self.trend_start, self.history_start, itemIds_block)
-                h_df = dg.get_history_data(self.history_start, self.history_end, itemIds_block)
+                t_df = dg.get_trends_data(trend_start, history_start, itemIds_block)
+                h_df = dg.get_history_data(history_start, history_end, itemIds_block)
                 df = pd.concat([t_df, h_df])
                 if group_name in charts:
                     # concatenate df

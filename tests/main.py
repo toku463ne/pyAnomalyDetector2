@@ -14,6 +14,7 @@ def run_tests():
     import tests.test_trends_stats_model
     import tests.test_flask_view
     import tests.test_trends_stats
+    import tests.test_detector_history_stats
 
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
@@ -26,6 +27,7 @@ def run_tests():
     suite.addTests(loader.loadTestsFromModule(tests.test_anomalies_model))
     suite.addTests(loader.loadTestsFromModule(tests.test_trends_stats_model))
     suite.addTests(loader.loadTestsFromModule(tests.test_trends_stats))
+    suite.addTests(loader.loadTestsFromModule(tests.test_detector_history_stats))
     #suite.addTests(loader.loadTestsFromModule(tests.test_flask_view))
     
 
