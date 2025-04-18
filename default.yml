@@ -57,9 +57,11 @@ view_sources:
       chart_width: 400
       chart_height: 300
       max_vertical_charts: 4
-      max_horizontal_charts: 4
+      max_horizontal_charts: 3
     chart_categories:
-      "bygroup": "By Group"
+      "bygroup": {
+        "name": "By Group",
+        "one_item_per_host": true}
 
 
 ##################################################
@@ -83,4 +85,5 @@ dbscan:
 #  anomaly detection params
 ##################################################
 detect1_lambda_threshold: 3.0
+detect2_lambda_threshold: 2.0
 ignore_diff_rate: 0.2

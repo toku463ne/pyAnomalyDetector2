@@ -6,9 +6,12 @@ from models.models_set import ModelsSet
 import trends_stats
 
 """
-To run this script, use the following command:
-# streamlit run /home/ubuntu/git/pyAnomalyDetector2/experiments/detect1_streamlit.py
+anomaly detection
 """
+
+
+# To run this script, use the following command:
+# streamlit run /home/ubuntu/git/pyAnomalyDetector2/experiments/detect1_streamlit.py
 
 endep = 1739505598 
 conf = config_loader.conf
@@ -20,6 +23,10 @@ conf["data_sources"] = {
 }
 view_source = conf["view_sources"]["flask_view"]
 view_source["port"] = 5200
+view_source["chart_categories"] = {"bygroup": {
+        "name": "By Group",
+        "one_item_per_host": False}
+}
 itemIds = [59888, 93281, 94003, 110309, 141917, 217822, 236160, 217825, 270793, 270797, 217823]
 
 trends_stats.update_stats(conf, endep - 3600*24*3, 0, itemIds=itemIds, initialize=True)

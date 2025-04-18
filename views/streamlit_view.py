@@ -55,7 +55,7 @@ class StreamlitView(View):
             rows=n_rows,
             cols=n_cols,
             subplot_titles=[
-                f"{itemId}<br>{properties[itemId]['host_name'][:30]}<br>{properties[itemId]['item_name'][:30]}"
+                f"{itemId}<br>{properties[itemId]['host_name'][:20]}<br>{properties[itemId]['item_name'][:20]}"
                 for itemId in itemIds
             ]
         )
@@ -95,13 +95,16 @@ class StreamlitView(View):
             )
 
         fig.update_layout(
-            height=self.chart_height * n_rows + 100,
-            width=self.chart_width * n_cols + 200,
+            height=max(self.chart_height * n_rows + 100, 400),
+            width=max(self.chart_width * n_cols + 200, 900),
+            autosize=True,
+            margin=dict(l=20, r=20, t=20, b=20),
             showlegend=False,
         )
         return fig
 
     def _generate_charts_by_group(self) -> Dict[str, go.Figure]:
+        opts = self.chart_categories[CAT_BY_GROUP]
         charts = {}
         for data_source_name, data_source in self.data_sources.items():
             ms = ModelsSet(data_source_name)
@@ -119,7 +122,8 @@ class StreamlitView(View):
             pdata = pdata.drop_duplicates(subset=["group_name", "host_name", "item_name", "itemid"])
             properties = pdata.set_index("itemid").T.to_dict()
 
-            data = data.groupby(["group_name", "hostid", "clusterid"]).agg({"itemid": "min"}).reset_index()
+            if opts.get("one_item_per_host", True):
+                data = data.groupby(["group_name", "hostid", "clusterid", "itemid"]).agg({"itemid": "min"}).reset_index()
             data = data.sort_values(by=["group_name", "hostid"])
             data = data[["group_name", "itemid"]]
             data = data.drop_duplicates(subset=["group_name", "itemid"])
@@ -156,10 +160,11 @@ class StreamlitView(View):
     def run(self) -> None:
         st.title("Anomaly Detector Charts")
 
-        categoryid = st.sidebar.selectbox(
+        categoryid = st.radio(
             "Select Category",
             options=list(self.chart_categories.keys()),
-            format_func=lambda k: self.chart_categories[k]
+            format_func=lambda k: self.chart_categories[k]["name"],
+            horizontal=True
         )
 
         if categoryid == CAT_BY_GROUP:

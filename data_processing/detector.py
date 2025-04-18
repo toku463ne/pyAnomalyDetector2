@@ -123,6 +123,25 @@ class Detector:
         return anomaly_itemIds
 
 
+    def _evaluate_cond(self, value: float, cond: Dict) -> bool:
+        if "condition" not in cond.keys():
+            return False
+
+        operator = cond["condition"].get("operator", "")
+        threshold = cond["condition"].get("value", "")
+        if operator == ">":
+            return value > threshold
+        elif operator == "<":
+            return value < threshold
+        elif operator == "=":
+            return value == threshold
+        elif operator == ">=":
+            return value >= threshold
+        elif operator == "<=":
+            return value <= threshold
+        return False
+
+
     def detect1_batch(self, itemIds: List[int], 
         t_stats: pd.DataFrame) -> List[int]:
         ms = self.ms
@@ -196,6 +215,131 @@ class Detector:
         
         return itemIds
     
+
+    def _get_df(self, itemIds: List[int], t_start: int, h_start: int, h_end: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        dg = self.dg
+        ms = self.ms
+        trends_df = dg.get_trends_full_data(itemIds=itemIds, startep=t_start, endep=h_start)
+        if trends_df.empty:
+            return pd.DataFrame()
+        history_df = ms.history.get_data(itemIds, startep=h_start, endep=h_end)
+        if history_df.empty:
+            return pd.DataFrame()
+
+        return trends_df, history_df
+
+
+    def _detect_diff_anomalies(self, itemIds: List[int], 
+                            trends_df: pd.DataFrame, recent_stats: pd.DataFrame, 
+                            lamnda_threshold: float,
+                            is_up=True) -> List[int]:
+        ignore_diff_rate = self.ignore_diff_rate
+        if is_up:
+            trends_df2 = trends_df[['itemid', 'clock', 'value_max']]
+            trends_df2.columns = ['itemid', 'clock', 'value']
+        else:
+            trends_df2 = trends_df[['itemid', 'clock', 'value_min']]
+            trends_df2.columns = ['itemid', 'clock', 'value']
+
+
+        # create a dataframe with adjacent value_xx peaks from trends_df
+        trends_diff = pd.DataFrame(columns=['itemid', 'clock', 'value', 'diff'], dtype=object)
+        for itemId in itemIds:
+            df = trends_df2[trends_df2['itemid'] == itemId]
+            df = df.copy()
+            df['diff'] = df['value'].diff().fillna(0)
+            df = df[df['diff'] != 0]
+            if trends_diff.empty:
+                trends_diff = df
+            elif not df.empty and len(df) > 0:
+                trends_diff = pd.concat([trends_diff, df])
+
+        # calculate trends_diff mean and std
+        trends_diff_stats = trends_diff.groupby('itemid')['diff'].agg(['mean', 'std']).reset_index()
+        #recent_stats = recent_diff.groupby('itemid')['diff'].agg(['min', 'max']).reset_index()
+        
+        # merge with hist_stats by itemid
+        stats_df = pd.merge(recent_stats, trends_diff_stats, on='itemid', how='inner')
+        stats_df = stats_df[stats_df['std'] > 0]
+
+        if is_up:
+            stats_df['diff'] = abs(stats_df['max'] - stats_df['mean'])
+            # filter by lambda_threshold
+            stats_df = stats_df[stats_df['diff'] > lamnda_threshold * stats_df['std']]
+
+            # filter by ignore_diff_rate
+            stats_df = stats_df[abs(stats_df['max'] - stats_df['mean'])/stats_df['mean'] > ignore_diff_rate]
+        else:
+            stats_df['diff'] = abs(stats_df['mean'] - stats_df['min'])
+
+            # filter by lambda_threshold
+            stats_df = stats_df[stats_df['diff'] > lamnda_threshold * stats_df['std']]
+            # filter by ignore_diff_rate
+            stats_df = stats_df[abs(stats_df['min'] - stats_df['mean'])/stats_df['mean'] > ignore_diff_rate]
+
+        # get itemIds
+        itemIds = stats_df['itemid'].tolist()
+
+        return itemIds
+
+
+    def _detect2_batch(self, history_df: pd.DataFrame, trends_df: pd.DataFrame,
+            itemIds: List[int]) -> List[int]:
+        
+        # group by itemid and get min, max and the first value
+        r_stats = history_df.groupby('itemid')['value'].agg(['min', 'max', 'first']).reset_index()
+        r_stats["min_diff"] = r_stats["min"] - r_stats["first"]
+        r_stats["max_diff"] = r_stats["max"] - r_stats["first"]
+        r_stats = r_stats[['itemid', 'min_diff', 'max_diff']]
+        r_stats.columns = ['itemid', 'min', 'max']
+
+
+        itemIds_up = self._detect_diff_anomalies(itemIds, trends_df, r_stats, self.detect2_lambda_threshold, is_up=True)
+        itemIds_dw = self._detect_diff_anomalies(itemIds, trends_df, r_stats, self.detect2_lambda_threshold, is_up=False)
+
+        itemIds = itemIds_up + itemIds_dw
+        itemIds = list(set(itemIds))
+        return itemIds
+
+
+    def detect2(self, itemIds: List[int]) -> List[int]:
+        batch_size = self.batch_size
+        itemIds = self.itemIds        
+        log(f"detector.detect2: itemIds: {len(itemIds)}")
+
+        anomaly_itemIds = []
+        for i in range(0, len(itemIds), batch_size):
+            batch_itemIds = itemIds[i:i+batch_size]
+            trends_df, history_df = self._get_df(batch_itemIds, t_start=self.trends_interval, h_start=self.history_interval, h_end=self.history_retention)
+            if trends_df.empty or history_df.empty:
+                continue
+
+            anomaly_itemIds.extend(self._detect2_batch(history_df, trends_df, batch_itemIds))
+
+        log(f"detector.detect2: found anomalies: {len(anomaly_itemIds)}")
+        return anomaly_itemIds
+    
+    
+    def detect3(self, itemIds: List[int]) -> List[int]:
+        batch_size = self.batch_size
+        itemIds = self.itemIds        
+        log(f"detector.detect3: itemIds: {len(itemIds)}")
+
+        anomaly_itemIds = []
+        for i in range(0, len(itemIds), batch_size):
+            batch_itemIds = itemIds[i:i+batch_size]
+            trends_df, history_df = self._get_df(batch_itemIds, t_start=self.trends_interval, h_start=self.history_interval, h_end=self.history_retention)
+            if trends_df.empty or history_df.empty:
+                continue
+
+            anomaly_itemIds.extend(self._detect3_batch(trends_df, base_clocks, batch_itemIds, startep2, 
+                                                lambda3_threshold, lambda4_threshold))
+
+        log(f"detector.detect3: found anomalies: {len(anomaly_itemIds)}")
+        return anomaly_itemIds
+
+
+
 
     def insert_anomalies(self, itemIds: List[int], created: int):
         dg = self.dg
