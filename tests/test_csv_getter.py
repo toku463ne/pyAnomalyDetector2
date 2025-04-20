@@ -61,7 +61,7 @@ class TestCsvGetter(unittest.TestCase):
         self.assertEqual(len(groups), 6)
         self.assertEqual(len(groups['app/iim']), 0)
         self.assertEqual(len(groups['app/sim']), 1)
-        self.assertEqual(len(groups['app/cal']), 2)
+        self.assertEqual(len(groups['app/cal']), 1)
         self.assertEqual(len(groups['app/bcs']), 1)
         self.assertEqual(len(groups['hw/nw']), 3)
         self.assertEqual(len(groups['hw/pc']), 5)

@@ -4,7 +4,8 @@ from typing import Dict, List, Tuple
 import logging
 import time
 
-import utils
+
+from utils import normalizer
 import utils.config_loader as config_loader
 import data_getter
 from models.models_set import ModelsSet
@@ -21,12 +22,15 @@ class Detector:
     def __init__(self, data_source_name, data_source: Dict, 
                  itemIds: List[int] = [], 
                  max_itemIds: int = 0,
-                skip_history_update: bool = False,
+                 skip_history_update: bool = False,
                  ):
         config = config_loader.conf
         self.skip_history_update = skip_history_update
         self.batch_size = config['batch_size']
         self.detect1_lambda_threshold = config['detect1_lambda_threshold']
+        self.detect2_lambda_threshold = config['detect2_lambda_threshold']
+        self.detect3_lambda_threshold1 = config['detect3_lambda_threshold1']
+        self.detect3_lambda_threshold2 = config['detect3_lambda_threshold2']
         self.trends_min_count = config['trends_min_count']
         self.ignore_diff_rate = config['ignore_diff_rate']
         self.history_interval = config["history_interval"]
@@ -34,6 +38,7 @@ class Detector:
         self.history_retention = config["history_retention"]
         self.history_recent_retention = config["history_recent_retention"]
         self.trends_retention = config["trends_retention"]
+        self.anomaly_valid_count_rate = config["anomaly_valid_count_rate"]
         
         self.data_source = data_source
         self.data_source_name = data_source_name
@@ -51,8 +56,16 @@ class Detector:
         self.itemIds = itemIds
 
 
+    def initialize_data(self):
+        ms = self.ms
+        ms.history.truncate()
+        ms.history_stats.truncate()
+        ms.history_updates.truncate()
+        ms.anomalies.truncate()
+       
 
-    def update_history_stats(self, endep: int = 0, initialize: bool = False,) -> None:
+
+    def update_history_stats(self, endep: int = 0) -> None:
         ms = self.ms
         itemIds = self.itemIds
         history_interval = self.history_interval
@@ -62,13 +75,6 @@ class Detector:
             endep = self.endep
         # get start time
         startep = endep - history_retention * history_interval
-        
-        if initialize:
-            ms.history.truncate()
-            ms.history_stats.truncate()
-            ms.history_updates.truncate()
-            ms.anomalies.truncate()
-        
 
         # only itemIds existing in trends_stats table
         itemIds, _ = ms.trends_stats.separate_existing_itemIds(itemIds)
@@ -99,8 +105,44 @@ class Detector:
             log(f"hs.update_stats({startep}, {diff_startep}, {endep}, {oldstartep})")
             hs.update_stats(startep, diff_startep, endep, oldstartep)
 
-        # update history_updates table
+
         ms.history_updates.upsert_updates(startep, endep)
+
+
+    def update_history(self, endep: int, itemIds: List[int] = []):
+        if len(itemIds) == 0:
+            itemIds = self.itemIds
+        history_interval = self.history_interval
+        startep = endep - history_interval * self.history_retention
+        oldep = startep - history_interval
+        base_clocks = normalizer.get_base_clocks(startep, endep, history_interval)
+
+        dg = self.dg
+        ms = self.ms
+        batch_size = self.batch_size
+        for i in range(0, len(itemIds), batch_size):
+            batch_itemIds = itemIds[i:i+batch_size]
+            hist_df = dg.get_history_data(startep=base_clocks[0], endep=base_clocks[-1], itemIds=batch_itemIds)
+            if hist_df.empty:
+                return 
+            
+            for itemId in batch_itemIds:
+                item_hist_df = hist_df[hist_df['itemid'] == itemId]
+                if item_hist_df.empty:
+                    continue
+
+                # sort by clock
+                item_hist_df = item_hist_df.sort_values(by='clock')
+
+                values = normalizer.fit_to_base_clocks(
+                    base_clocks, 
+                    item_hist_df['clock'].tolist(), 
+                    item_hist_df['value'].tolist())
+                ms.history.upsert([itemId]*len(base_clocks), base_clocks, values)
+
+            if oldep > 0:
+                # delete old history data
+                ms.history.remove_old_data(oldep)
 
 
         
@@ -221,10 +263,10 @@ class Detector:
         ms = self.ms
         trends_df = dg.get_trends_full_data(itemIds=itemIds, startep=t_start, endep=h_start)
         if trends_df.empty:
-            return pd.DataFrame()
+            return pd.DataFrame(),pd.DataFrame()
         history_df = ms.history.get_data(itemIds, startep=h_start, endep=h_end)
         if history_df.empty:
-            return pd.DataFrame()
+            return pd.DataFrame(),pd.DataFrame()
 
         return trends_df, history_df
 
@@ -302,15 +344,19 @@ class Detector:
         return itemIds
 
 
-    def detect2(self, itemIds: List[int]) -> List[int]:
+    def detect2(self, itemIds: List[int], endep: int) -> List[int]:
         batch_size = self.batch_size
         itemIds = self.itemIds        
         log(f"detector.detect2: itemIds: {len(itemIds)}")
 
+        t_start = endep - self.trends_interval * self.trends_retention
+        h_start = endep - self.history_interval * self.history_retention
+        
+
         anomaly_itemIds = []
         for i in range(0, len(itemIds), batch_size):
             batch_itemIds = itemIds[i:i+batch_size]
-            trends_df, history_df = self._get_df(batch_itemIds, t_start=self.trends_interval, h_start=self.history_interval, h_end=self.history_retention)
+            trends_df, history_df = self._get_df(batch_itemIds, t_start=t_start, h_start=h_start, h_end=endep)
             if trends_df.empty or history_df.empty:
                 continue
 
@@ -319,21 +365,203 @@ class Detector:
         log(f"detector.detect2: found anomalies: {len(anomaly_itemIds)}")
         return anomaly_itemIds
     
+
+    def _filter_anomalies(self, df: pd.DataFrame, 
+                        stats_df: pd.DataFrame,
+                        lambda_threshold: float,
+                        is_up=True) -> pd.DataFrame:
+        dtypes = np.dtype([('itemid', 'int64'), ('clock', 'int64'), ('value', 'float64')])
+        new_df = pd.DataFrame(np.empty(0, dtype=dtypes))
+        #new_df = pd.DataFrame(columns=['itemid', 'clock', 'value'])
+        for row in stats_df.itertuples():
+            itemId = row.itemid
+            std = row.std
+            mean = row.mean
+            if is_up:
+                df_part = df[(df['itemid'] == itemId) & (df['value'] > mean + lambda_threshold * std)]
+            else:
+                df_part = df[(df['itemid'] == itemId) & (df['value'] < mean - lambda_threshold * std)]
+            if df_part.empty:
+                continue
+            if new_df.empty:
+                new_df = df_part
+            else:
+                new_df = pd.concat([new_df, df_part])
+
+        return new_df
+
+    def _filter_by_anomaly_cnt(self, stats_df: pd.DataFrame, 
+        hist_count: int,
+        df: pd.DataFrame, 
+        lamdba_threshold: float,
+        is_up=True) -> List[int]:
+        anomaly_valid_count_rate = self.anomaly_valid_count_rate
+
+        # filter anomalies in history_df1
+        df = self._filter_anomalies(df, stats_df, lamdba_threshold, is_up=is_up)
+
+        if df.empty:
+            return []
+
+        # get anomaly counts
+        df_anom_counts = df.groupby('itemid')['value'].count().reset_index()
+        df_anom_counts.columns = ['itemid', 'anom_cnt']
+        
+        # merge counts
+        #df_anom_counts = pd.merge(df_counts, df_anom_counts, on='itemid', how='left')
+        df_anom_counts = df_anom_counts.fillna(0)
+
+        # filter by anomaly up count
+        itemIds = df_anom_counts[(df_anom_counts['anom_cnt'] / hist_count > anomaly_valid_count_rate)]['itemid'].tolist()
+
+        # make unique
+        itemIds = list(set(itemIds))
+        return itemIds
+
+
+    def _calc_local_peak(self, itemIds: List[int], df: pd.DataFrame, window: int, is_up=True) -> pd.DataFrame:
+        new_df = []
+        for itemId in itemIds:
+            df_item = df[df['itemid'] == itemId]
+            if df_item.empty:
+                continue
+            epoch = df_item.iloc[-1]['clock']
+            startep = df_item.iloc[0]['clock']
+            window_half = window // 2
+            peak_val = -float('inf') if is_up else float('inf')
+            peak_epoch = 0
+            while epoch >= startep:
+                val = df_item[(df_item['clock'] <= epoch) & (df_item['clock'] > epoch - window)]['value'].mean()
+                if is_up:
+                    peak_val = max(peak_val, val)
+                    peak_epoch = epoch
+                else:
+                    peak_val = min(peak_val, val)
+                    peak_epoch = epoch
+                epoch -= window_half
+            new_df.append({'itemid': itemId, 'local_peak': peak_val, 'peak_clock': peak_epoch})
+            
+        return pd.DataFrame(new_df)
+
+
+    # df_counts, lambda2_threshold, density_window
+    def _filter_anomal_history(self, itemIds: List[int], 
+                            df: pd.DataFrame, 
+                            trends_peak: pd.DataFrame,
+                            hist_count: int,
+                            trends_stas_df: pd.DataFrame,
+                            density_window: int,
+                            lambda_threshold: float,
+                            is_up=True) -> List[int]:
+        # filter by anomaly count
+        itemIds = self._filter_by_anomaly_cnt(trends_stas_df, hist_count, df, lambda_threshold, is_up=is_up)
+
+        if len(itemIds) == 0:
+            return []
+        local_peaks = self._calc_local_peak(itemIds, trends_peak, density_window, is_up=is_up)
+        
+        means = df.groupby('itemid')['value'].mean().reset_index()
+        local_peaks = pd.merge(local_peaks, means, on='itemid', how='inner')
+
+        if is_up:
+            itemIds = local_peaks[(local_peaks['local_peak'] < local_peaks['value'])]['itemid'].tolist()  
+        else:
+            itemIds = local_peaks[(local_peaks['local_peak'] > local_peaks['value'])]['itemid'].tolist()
+
+        itemIds = list(set(itemIds))
+        return itemIds
     
-    def detect3(self, itemIds: List[int]) -> List[int]:
+
+    def _get_trends_stats(self, trends_df: pd.DataFrame, cnts_df: pd.DataFrame) -> Tuple[pd.DataFrame]:
+        means = trends_df.groupby('itemid')['value'].mean().reset_index()
+        means.columns = ['itemid', 'mean']
+        stds = trends_df.groupby('itemid')['value'].std().reset_index()
+        stds.columns = ['itemid', 'std']
+        trends_stats_df = pd.merge(means, stds, on='itemid', how='inner')
+        trends_stats_df = pd.merge(trends_stats_df, cnts_df, on='itemid', how='inner')
+        return trends_stats_df
+    
+
+    def _detect3_batch(self, 
+            trends_df: pd.DataFrame,
+            base_clocks: List[int],
+            itemIds: List[int], 
+            startep2: int) -> List[int]:
+
+        ms = self.ms
+        cnts = trends_df.groupby('itemid')['value_avg'].count().reset_index()
+        cnts.columns = ['itemid', 'cnt']
+        itemIds = cnts[cnts['cnt'] > 0]['itemid'].tolist()
+
+        trends_max = trends_df[['itemid', 'clock', 'value_max']]
+        trends_max.columns = ['itemid', 'clock', 'value']
+        trends_min = trends_df[['itemid', 'clock', 'value_min']]
+        trends_min.columns = ['itemid', 'clock', 'value']
+
+        
+        # get history data
+        history_df1 = ms.history.get_data(itemIds)
+        if history_df1.empty:
+            return []
+        
+        trends_stats_df_up = self._get_trends_stats(trends_max, cnts)
+        trends_stats_df_dw = self._get_trends_stats(trends_min, cnts)
+
+        
+        #df_counts = history_df1.groupby('itemid')['value'].count().reset_index()
+        #df_counts.columns = ['itemid', 'cnt']
+        hist_count = len(base_clocks)
+
+        density_window = self.history_interval * self.history_retention
+
+        itemIds_up = self._filter_anomal_history(itemIds, history_df1, trends_max, hist_count, trends_stats_df_up, 
+                                            density_window, self.detect3_lambda_threshold1, is_up=True)
+        itemIds_dw = self._filter_anomal_history(itemIds, history_df1, trends_min, hist_count, trends_stats_df_dw, 
+                                            density_window, self.detect3_lambda_threshold1, is_up=False)
+
+        itemIds1 = itemIds_up + itemIds_dw
+        
+        # get history starting with startep2, and exclude itemIds 
+        history_df2 = history_df1[~history_df1['itemid'].isin(itemIds1)]
+        history_df2 = history_df2[history_df2['clock'] >= startep2]
+        if history_df2.empty:
+            return itemIds
+        
+        # base clocks >= startep2
+        base_clocks2 = [clock for clock in base_clocks if clock >= startep2]
+        hist_count = len(base_clocks2)
+        
+        #df_counts = history_df2.groupby('itemid')['value'].count().reset_index()
+        #df_counts.columns = ['itemid', 'cnt']
+
+        itemIds_up = self._filter_anomal_history(itemIds, history_df2, trends_max, hist_count, trends_stats_df_up, 
+                                            density_window, self.detect3_lambda_threshold2, is_up=True)
+        itemIds_dw = self._filter_anomal_history(itemIds, history_df2, trends_min, hist_count, trends_stats_df_dw, 
+                                            density_window, self.detect3_lambda_threshold2, is_up=False)
+
+        itemIds2 = itemIds_up + itemIds_dw
+        itemIds1.extend(itemIds2)
+        itemIds = list(set(itemIds1))
+
+        return itemIds
+
+    
+    def detect3(self, itemIds: List[int], endep: int) -> List[int]:
         batch_size = self.batch_size
-        itemIds = self.itemIds        
+        itemIds = self.itemIds
+        t_start = endep - self.trends_interval * self.trends_retention
+        h_start = endep - self.history_interval * self.history_recent_retention
+        base_clocks = normalizer.get_base_clocks(t_start, endep, self.history_interval)        
         log(f"detector.detect3: itemIds: {len(itemIds)}")
 
         anomaly_itemIds = []
         for i in range(0, len(itemIds), batch_size):
             batch_itemIds = itemIds[i:i+batch_size]
-            trends_df, history_df = self._get_df(batch_itemIds, t_start=self.trends_interval, h_start=self.history_interval, h_end=self.history_retention)
+            trends_df, history_df = self._get_df(batch_itemIds, t_start=t_start, h_start=h_start, h_end=endep)
             if trends_df.empty or history_df.empty:
                 continue
 
-            anomaly_itemIds.extend(self._detect3_batch(trends_df, base_clocks, batch_itemIds, startep2, 
-                                                lambda3_threshold, lambda4_threshold))
+            anomaly_itemIds.extend(self._detect3_batch(trends_df, base_clocks, batch_itemIds, h_start))
 
         log(f"detector.detect3: found anomalies: {len(anomaly_itemIds)}")
         return anomaly_itemIds
@@ -341,9 +569,12 @@ class Detector:
 
 
 
-    def insert_anomalies(self, itemIds: List[int], created: int):
+    def insert_anomalies(self, created: int, itemIds: List[int]=[]):
         dg = self.dg
         ms = self.ms
+        if len(itemIds) == 0:
+            itemIds = self.itemIds
+
         df = dg.get_items_details(itemIds)
         # df.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
 

@@ -1,9 +1,9 @@
 import __init__ # # noqa: F401
-import detect_anomalies
 import utils.config_loader as config_loader
 from views.streamlit_view import StreamlitView
 from models.models_set import ModelsSet
-import trends_stats
+import tests.testlib as testlib
+import classifiers.dbscan as dbscan
 
 """
 anomaly detection
@@ -11,7 +11,7 @@ anomaly detection
 
 
 # To run this script, use the following command:
-# streamlit run /home/ubuntu/git/pyAnomalyDetector2/experiments/detect1_streamlit.py
+# streamlit run /home/ubuntu/git/pyAnomalyDetector2/experiments/dbscan_streamlit.py
 
 endep = 1739505598 
 conf = config_loader.conf
@@ -23,23 +23,22 @@ conf["data_sources"] = {
 }
 view_source = conf["view_sources"]["flask_view"]
 view_source["port"] = 5200
-view_source["chart_categories"] = {"bygroup": {
-        "name": "By Group",
+view_source["chart_categories"] = {"bycluster": {
+        "name": "By Cluster",
         "one_item_per_host": False}
 }
 itemIds = [59888, 93281, 94003, 110309, 141917, 217822, 236160, 217825, 270793, 270797, 217823]
 
-trends_stats.update_stats(conf, endep - 3600*24*3, 0, itemIds=itemIds, initialize=True)
-
-
-detect_anomalies.run(conf=conf, endep=endep,
+testlib.import_test_data(conf, itemIds, endep)
+clusters, centroids, chart_info = dbscan.classify_charts(
+    conf,
     itemIds=itemIds,
-    initialize=True,
-    detection_stages=[1])
+    endep=endep,
+)
+for data_source_name in conf["data_sources"]:
+    ms = ModelsSet(data_source_name)
+    ms.anomalies.update_clusterid(clusters)
 
-ms = ModelsSet("csv_datasource")
-itemIds = ms.anomalies.get_itemids()
-print(f"Anomalies: {itemIds}")
 
 v = StreamlitView(conf, view_source, data_sources=conf["data_sources"])
 v.run()

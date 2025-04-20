@@ -26,6 +26,28 @@ class AnomaliesModel(Model):
         for (itemId,) in cur:
             itemIds.append(itemId)
         return itemIds
+    
+
+    def get_charts(self, itemIds: List[int] = []) -> Dict[int, pd.Series]:
+        if len(itemIds) == 0:
+            itemIds = self.get_itemids()
+        sql = f"SELECT itemid, created, hostid, clusterid, group_name, host_name, item_name, trend_mean, trend_std FROM {self.table_name} WHERE itemid in (%s);" % ",".join(map(str, itemIds))
+        df = self.db.read_sql(sql)
+        if df.empty:
+            return {}
+        
+        charts = {}
+        for _, row in df.iterrows():
+            itemId = row.itemid
+            if itemId not in charts:
+                charts[itemId] = []
+            charts[itemId].append(row)
+        
+        # convert to series
+        for itemId in charts:
+            charts[itemId] = pd.Series(charts[itemId])
+        
+        return charts  
 
     def get_last_updated(self) -> float:
         sql = f"SELECT max(created) FROM {self.table_name}"
@@ -69,3 +91,16 @@ class AnomaliesModel(Model):
         return itemIds
 
     
+    def get_stats_per_itemId(self, itemIds: List[int] = []) -> Dict[int, Dict[str, float]]:
+        if len(itemIds) == 0:
+            itemIds = self.get_itemids()
+        sql = f"SELECT itemid, trend_mean, trend_std FROM {self.table_name} WHERE itemid in (%s);" % ",".join(map(str, itemIds))
+        df = self.db.read_sql(sql)
+        if df.empty:
+            return {}
+        
+        stats = {}
+        for _, row in df.iterrows():
+            stats[row.itemid] = {"mean": row.trend_mean, "std": row.trend_std}
+        
+        return stats

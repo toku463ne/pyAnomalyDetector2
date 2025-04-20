@@ -188,7 +188,7 @@ class CsvGetter(DataGetter):
         if len(group_names) == 0:
             groups['all'] = [int(itemid) for itemid, item in items.items()]
         for group_name in group_names:
-            groups[group_name] = [int(itemid) for itemid, item in items.items() if item['group_name'] == group_name]
+            groups[group_name] = [int(itemid) for itemid, item in items.items() if item['group_name'][:len(group_name)] == group_name]
 
         return groups
         

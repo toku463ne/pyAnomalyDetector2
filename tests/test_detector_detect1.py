@@ -53,7 +53,7 @@ class TestDetector(unittest.TestCase):
         endep = 1739505598 - 600*18
         
         d = Detector(name, data_source, itemIds)
-        d.update_history_stats(endep, initialize=True)
+        d.update_history_stats(endep)
 
         anomaly_itemIds = d.detect1()
         self.assertIsNotNone(anomaly_itemIds)

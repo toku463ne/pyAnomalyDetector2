@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import List
+from typing import List, Dict
 
 from models.model import Model
 import utils.normalizer as normalizer
@@ -65,3 +65,24 @@ class HistoryModel(Model):
     def remove_itemIds_not_in(self, itemIds: List[int]):
         sql = f"DELETE FROM {self.table_name} WHERE itemid NOT IN ({','.join(map(str, itemIds))});"
         self.db.exec_sql(sql)
+
+    def get_charts(self, itemIds: List[int], startep: int, endep: int) -> Dict[int, pd.Series]:
+        sql = f"SELECT itemid, clock, value FROM {self.table_name} WHERE itemid IN ({','.join(map(str, itemIds))}) AND clock >= {startep} AND clock <= {endep};"
+        df = self.db.read_sql(sql)
+        if df.empty:
+            return {}
+        
+        df.columns = self.fields
+        
+        charts = {}
+        for _, row in df.iterrows():
+            itemId = row.itemid
+            if itemId not in charts:
+                charts[itemId] = []
+            charts[itemId].append(row["value"])
+        
+        # convert to series
+        for itemId in charts:
+            charts[itemId] = pd.Series(charts[itemId])
+        
+        return charts

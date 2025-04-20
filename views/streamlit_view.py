@@ -1,5 +1,6 @@
 from typing import Dict
 import streamlit as st
+st.set_page_config(layout="wide")
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 from typing import List, Dict
@@ -27,6 +28,7 @@ class StreamlitView(View):
         self.trends_retention = config["trends_retention"]
         self.history_interval = config["history_interval"]
         self.history_retention = config["history_retention"]
+        self.detect1_lambda_threshold = config["detect1_lambda_threshold"]
 
         self.view_source = view_source
         self.itemIds = view_source.get("itemids", [])
@@ -94,6 +96,53 @@ class StreamlitView(View):
                 col=col
             )
 
+            mean = properties[itemId]['trend_mean']
+            std = properties[itemId]['trend_std']
+
+            # Add +3σ and -3σ lines if within y range
+            plus_3sigma = mean + self.detect1_lambda_threshold * std
+            minus_3sigma = mean - self.detect1_lambda_threshold * std
+            y_min, y_max = y_values.min(), y_values.max()
+            x_vals = item_df['clock']
+
+            if y_min - std <= plus_3sigma <= y_max + std:
+                fig.add_trace(
+                    go.Scatter(
+                        x=x_vals,
+                        y=[plus_3sigma] * len(x_vals),
+                        mode="lines",
+                        line=dict(dash='dash', color='red'),
+                        name="+3σ"
+                    ),
+                    row=row,
+                    col=col
+                )
+            if y_min - std <= minus_3sigma <= y_max + std:
+                fig.add_trace(
+                    go.Scatter(
+                        x=x_vals,
+                        y=[minus_3sigma] * len(x_vals),
+                        mode="lines",
+                        line=dict(dash='dash', color='blue'),
+                        name="-3σ"
+                    ),
+                    row=row,
+                    col=col
+                )
+            # Add mean line
+            if y_min - std <= mean <= y_max + std:
+                fig.add_trace(
+                    go.Scatter(
+                        x=x_vals,
+                        y=[mean] * len(x_vals),
+                        mode="lines",
+                        line=dict(dash='dot', color='green'),
+                        name="mean"
+                    ),
+                    row=row,
+                    col=col
+                )
+
         fig.update_layout(
             height=max(self.chart_height * n_rows + 100, 400),
             width=max(self.chart_width * n_cols + 200, 900),
@@ -103,8 +152,24 @@ class StreamlitView(View):
         )
         return fig
 
-    def _generate_charts_by_group(self) -> Dict[str, go.Figure]:
-        opts = self.chart_categories[CAT_BY_GROUP]
+    def _generate_charts_by_category(self, categoryid: str) -> Dict[str, go.Figure]:
+        if categoryid == CAT_BY_GROUP:
+            group_key = "group_name"
+            opts = self.chart_categories[CAT_BY_GROUP]
+            prop_keys = ["group_name", "host_name", "item_name", "itemid", "created", "trend_mean", "trend_std"]
+            groupby_keys = ["group_name", "hostid", "clusterid", "itemid"]
+            sort_keys = ["group_name", "hostid"]
+            drop_keys = ["group_name", "itemid"]
+        elif categoryid == CAT_BY_CLUSTER:
+            group_key = "clusterid"
+            opts = self.chart_categories[CAT_BY_CLUSTER]
+            prop_keys = ["clusterid", "host_name", "item_name", "itemid", "created", "trend_mean", "trend_std"]
+            groupby_keys = ["clusterid", "hostid", "itemid"]
+            sort_keys = ["clusterid", "hostid"]
+            drop_keys = ["clusterid", "itemid"]
+        else:
+            raise ValueError(f"Unsupported categoryid: {categoryid}")
+
         charts = {}
         for data_source_name, data_source in self.data_sources.items():
             ms = ModelsSet(data_source_name)
@@ -118,19 +183,19 @@ class StreamlitView(View):
             history_start = endep - self.history_retention * self.history_interval
             history_end = endep
 
-            pdata = data[["group_name", "host_name", "item_name", "itemid"]]
-            pdata = pdata.drop_duplicates(subset=["group_name", "host_name", "item_name", "itemid"])
+            pdata = data[prop_keys]
+            pdata = pdata.sort_values("created").drop_duplicates(subset=prop_keys[:-3], keep="last")
             properties = pdata.set_index("itemid").T.to_dict()
 
             if opts.get("one_item_per_host", True):
-                data = data.groupby(["group_name", "hostid", "clusterid", "itemid"]).agg({"itemid": "min"}).reset_index()
-            data = data.sort_values(by=["group_name", "hostid"])
-            data = data[["group_name", "itemid"]]
-            data = data.drop_duplicates(subset=["group_name", "itemid"])
-            group_names = data["group_name"].unique()
+                data = data.groupby(groupby_keys).agg({"itemid": "min"}).reset_index()
+            data = data.sort_values(by=sort_keys)
+            data = data[drop_keys]
+            data = data.drop_duplicates(subset=drop_keys)
+            group_names = data[group_key].unique()
 
             for group_name in group_names:
-                group_data = data[data["group_name"] == group_name]
+                group_data = data[data[group_key] == group_name]
                 itemIds_block = group_data["itemid"].tolist()
                 if len(itemIds_block) == 0:
                     continue
@@ -157,6 +222,14 @@ class StreamlitView(View):
                 charts_fig[group_name] = self._generate_charts_in_group(charts[group_name], properties)
         return charts_fig
 
+    def _generate_charts_by_group(self) -> Dict[str, go.Figure]:
+        return self._generate_charts_by_category(CAT_BY_GROUP)
+
+    def _generate_charts_by_cluster(self) -> Dict[str, go.Figure]:
+        return self._generate_charts_by_category(CAT_BY_CLUSTER)
+
+
+
     def run(self) -> None:
         st.title("Anomaly Detector Charts")
 
@@ -167,11 +240,17 @@ class StreamlitView(View):
             horizontal=True
         )
 
-        if categoryid == CAT_BY_GROUP:
-            charts_by_group = self._generate_charts_by_group()
-            for group_name, fig in charts_by_group.items():
-                st.subheader(group_name)
-                st.plotly_chart(fig, use_container_width=True)
+        if categoryid in [CAT_BY_GROUP, CAT_BY_CLUSTER]:
+            if categoryid == CAT_BY_GROUP:
+                charts = self._generate_charts_by_group()
+            elif categoryid == CAT_BY_CLUSTER:
+                charts = self._generate_charts_by_cluster()
+            if charts:
+                tab_names = [str(name) for name in charts.keys()]
+                tabs = st.tabs(tab_names)
+                for tab, group_name in zip(tabs, tab_names):
+                    with tab:
+                        st.plotly_chart(charts[int(group_name)], use_container_width=True, key=f"plotly_chart_{group_name}")
         else:
             st.warning(f"Category '{categoryid}' is not supported in Streamlit view.")
 

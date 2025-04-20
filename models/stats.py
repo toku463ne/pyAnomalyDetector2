@@ -45,4 +45,14 @@ class StatsModel(Model):
         df.columns = self.fields
         return df
 
-    
+    def get_stats_per_itemId(self, itemIds: List[int] = []) -> dict:
+        stats = {}
+        df = self.read_stats(itemIds)
+        for _, row in df.iterrows():
+            itemId = row.itemid
+            stats[itemId] = {
+                'cnt': int(row["cnt"]),
+                'mean': float(row["mean"]),
+                'std': float(row["std"])
+            }
+        return stats

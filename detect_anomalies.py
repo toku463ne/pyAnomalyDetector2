@@ -1,15 +1,12 @@
 from typing import Dict, List, Tuple
 import logging
-import time
 
 
 import utils.config_loader as config_loader
-from models.models_set import ModelsSet
-import data_processing.detector as detector
-from data_processing.history_stats import HistoryStats
 import data_getter
-import utils.normalizer as normalizer
 from data_processing.detector import Detector
+import classifiers.dbscan as dbscan
+import models.models_set as models_set
 
 STAGE_DETECT1 = 1
 STAGE_DETECT2 = 2
@@ -24,13 +21,24 @@ def log(msg, level=logging.INFO):
     msg = f"[detector.py] {msg}"
     logging.log(level, msg)
 
+
+def init(conf: Dict):
+    data_sources = conf['data_sources']
+    for data_source_name in data_sources:
+        data_source = data_sources[data_source_name]
+        log(f"processing data source: {data_source_name}")
+
+        d = Detector(data_source_name, data_source)
+        d.initialize_data()
+        
+
+
 def run(conf: Dict, endep: int = 0, 
         item_names: List[str] = None, 
         host_names: List[str] = None, 
         group_names: List[str] = None,
         itemIds: List[int] = None,
         max_itemIds = 0,
-        initialize = False,
         skip_history_update = False,
         detection_stages = DETECTION_STAGES
         ) -> List[int]:
@@ -61,15 +69,32 @@ def run(conf: Dict, endep: int = 0,
         
         d = Detector(data_source_name, data_source, itemIds)
         if not skip_history_update:
-            d.update_history_stats(endep, initialize=initialize)
+            d.update_history_stats(endep)
         
         anomaly_itemIds = []
         if STAGE_DETECT1 in detection_stages:
             log(f"running detect1 for {data_source_name}")
             anomaly_itemIds = d.detect1()
+            if len(anomaly_itemIds) == 0:
+                log(f"no anomalies detected for {data_source_name}")
+                continue
 
-        d.insert_anomalies(anomaly_itemIds, created=endep)
+        if STAGE_DETECT2 in detection_stages or STAGE_DETECT3 in detection_stages:
+            if len(anomaly_itemIds) == 0:
+                anomaly_itemIds = itemIds
+            d.update_history(endep, anomaly_itemIds)
 
+        if STAGE_DETECT2 in detection_stages:
+            log(f"running detect2 for {data_source_name}")
+            anomaly_itemIds = d.detect2(anomaly_itemIds, endep)
+        if STAGE_DETECT3 in detection_stages:
+            log(f"running detect3 for {data_source_name}")
+            anomaly_itemIds = d.detect3(anomaly_itemIds, endep)
+
+        d.insert_anomalies(endep, anomaly_itemIds)
+
+    # classify anomaly charts
+    dbscan.classify_charts(conf, itemIds, endep=endep)
 
     return anomaly_itemIds
 

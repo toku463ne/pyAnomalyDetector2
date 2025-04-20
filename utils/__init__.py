@@ -37,7 +37,10 @@ def get_float_format(a: np.ndarray, mask_len: int) -> int:
     data_range = max_val - min_val
 
     max_digit = int(np.floor(np.log10(max_val))) + 1
-    digits = int(np.floor(np.log10(data_range))) + 1
+    if data_range == 0:
+        digits = 0
+    else:
+        digits = int(np.floor(np.log10(data_range))) + 1
     if digits == 0:
         return max_digit + mask_len
     elif digits < 0:
