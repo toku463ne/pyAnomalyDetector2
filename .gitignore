@@ -1,6 +1,7 @@
 views/templates/bk
 bk_*
 debugdata/
+debugcode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

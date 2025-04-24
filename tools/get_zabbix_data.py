@@ -51,6 +51,12 @@ class ZabbixDataExporter:
         file_path = os.path.join(self.output_dir, self.item_details_file_name)
         df.to_csv(file_path, mode='w', index=False, compression='gzip')
 
+        # write endep to a file
+        endep_file_path = os.path.join(self.output_dir, "endep.txt")
+        with open(endep_file_path, 'w') as f:
+            f.write(str(endep))
+        print(f"endep: {endep} written to {endep_file_path}")
+
 
     def export_data_from_anomalies(self):
         itemIds = self.ms.anomalies.get_itemids()
