@@ -22,7 +22,7 @@ class PostgreSqlDB:
 		conn.autocommit = True
 
 		# Connect to the specified schema
-		schema = config["schema"]
+		schema = config.get("schema", "public")
 		cur = conn.cursor()
 		cur.execute(f"SET search_path TO {schema};")
 

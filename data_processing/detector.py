@@ -346,7 +346,8 @@ class Detector:
 
     def detect2(self, itemIds: List[int], endep: int) -> List[int]:
         batch_size = self.batch_size
-        itemIds = self.itemIds        
+        if len(itemIds) == 0:
+            itemIds = self.itemIds        
         log(f"detector.detect2: itemIds: {len(itemIds)}")
 
         t_start = endep - self.trends_interval * self.trends_retention
@@ -548,7 +549,8 @@ class Detector:
     
     def detect3(self, itemIds: List[int], endep: int) -> List[int]:
         batch_size = self.batch_size
-        itemIds = self.itemIds
+        if len(itemIds) == 0:
+            itemIds = self.itemIds
         t_start = endep - self.trends_interval * self.trends_retention
         h_start = endep - self.history_interval * self.history_recent_retention
         base_clocks = normalizer.get_base_clocks(t_start, endep, self.history_interval)        
@@ -563,7 +565,7 @@ class Detector:
 
             anomaly_itemIds.extend(self._detect3_batch(trends_df, base_clocks, batch_itemIds, h_start))
 
-        log(f"detector.detect3: found anomalies: {len(anomaly_itemIds)}")
+        log(f"detector.detect3: found anomalies: {anomaly_itemIds}")
         return anomaly_itemIds
 
 
@@ -573,13 +575,23 @@ class Detector:
         dg = self.dg
         ms = self.ms
         if len(itemIds) == 0:
-            itemIds = self.itemIds
+            return
 
+        log("inserting anomalies")
         df = dg.get_items_details(itemIds)
         # df.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
 
+        if df is None or len(df) == 0:
+            return
+
+        print(df)
+
         # get trends stats
         trends_stats = ms.trends_stats.read_stats(itemIds)
+
+        if len(trends_stats) == 0:
+            return
+
         trends_stats = trends_stats[['itemid', 'mean', 'std']]
         # merge with df
         df = pd.merge(df, trends_stats, on='itemid', how='inner')

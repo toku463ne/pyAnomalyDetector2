@@ -39,29 +39,29 @@ history_recent_retention: 6
 ##################################################
 #  data_sources
 ##################################################
-data_sources:
-  csv_source:
-    data_dir: "testdata/csv/20250214_1100"
-    type: csv
+#data_sources:
+#  csv_source:
+#    data_dir: "testdata/csv/20250214_1100"
+#    type: csv
 
 ##################################################
 #  views
 ##################################################
-view_sources:
-  flask_view:
-    type: flask
-    host: "localhost"
-    port: 5000
-    debug: false
-    layout: 
-      chart_width: 400
-      chart_height: 300
-      max_vertical_charts: 4
-      max_horizontal_charts: 3
-    chart_categories:
-      "bygroup": {
-        "name": "By Group",
-        "one_item_per_host": true}
+#view_sources:
+ # flask_view:
+ #   type: flask
+ #   host: "localhost"
+ #   port: 5000
+ #   debug: false
+ #   layout: 
+ #     chart_width: 400
+ #     chart_height: 300
+ #     max_vertical_charts: 4
+ #     max_horizontal_charts: 3
+ #   chart_categories:
+ #     "bygroup": {
+ #       "name": "By Group",
+ #       "one_item_per_host": true}
 
 
 ##################################################

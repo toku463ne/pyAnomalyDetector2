@@ -286,4 +286,18 @@ class ZabbixGetter(DataGetter):
         
         return [row[0] for row in rows]
     
-    
+
+    def get_items_details(self, itemIds: List[int]) -> pd.DataFrame:
+        sql = f"""
+            select hstgrp.name as group_name, hosts.hostid as hostid, hosts.host as host_name, items.itemid as itemid, items.key_ item_name
+                from hosts 
+                inner join items on hosts.hostid = items.hostid
+                inner join hosts_groups on hosts_groups.hostid = hosts.hostid
+                inner join hstgrp on hstgrp.groupid = hosts_groups.groupid 
+                where itemid IN ({",".join(map(str, itemIds))})
+        """
+
+        df = self.db.read_sql(sql)
+        df.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
+
+        return df

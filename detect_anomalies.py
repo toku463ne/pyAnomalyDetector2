@@ -18,7 +18,8 @@ DETECTION_STAGES = [
 ]
 
 def log(msg, level=logging.INFO):
-    msg = f"[detector.py] {msg}"
+    msg = f"[detect_anomalies.py] {msg}"
+    print(msg)
     logging.log(level, msg)
 
 
@@ -43,6 +44,7 @@ def run(conf: Dict, endep: int = 0,
         detection_stages = DETECTION_STAGES
         ) -> List[int]:
 
+    log("starting")
     
     if item_names is None:
         item_names = conf.get('item_names', [])
@@ -94,7 +96,12 @@ def run(conf: Dict, endep: int = 0,
         d.insert_anomalies(endep, anomaly_itemIds)
 
     # classify anomaly charts
-    dbscan.classify_charts(conf, itemIds, endep=endep)
+    classified_itemIds = ms.anomalies.get_itemids()
+    if len(classified_itemIds) > 1:
+        log("classifying charts")
+        dbscan.classify_charts(conf, classified_itemIds, endep=endep)
+
+    log("completed")
 
     return anomaly_itemIds
 
@@ -119,11 +126,13 @@ if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     config = config_loader.load_config(args.config)
 
+    if args.init:
+        init(config)
+
     run(config, args.end, 
         item_names=args.items, 
         host_names=args.hosts, 
         group_names=args.groups,
         itemIds=args.itemids,
-        initialize=args.init,
         skip_history_update=args.skip_history_update,
     )

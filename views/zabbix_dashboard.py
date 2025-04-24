@@ -39,6 +39,7 @@ class ZabbixDashboard(View):
             pagedata[group_name].append(itemid)
         
         self.create_dashboard(self.dashboard_name, pagedata)
+        log("completed")
 
     def show_latest(self, data: pd.DataFrame):
         log("show latest dashboard")
@@ -58,6 +59,7 @@ class ZabbixDashboard(View):
         
         dashboard_name = f"{self.dashboard_name}_latest"
         self.create_dashboard(dashboard_name, pagedata)
+        log("completed")
 
     def show_by_cluster(self, data: pd.DataFrame):
         log("show by cluster dashboard")
@@ -82,6 +84,7 @@ class ZabbixDashboard(View):
         
         dashboard_name = f"{self.dashboard_name}_bycluster"
         self.create_dashboard(dashboard_name, pagedata)
+        log("completed")
 
             
     def check_conn(self):

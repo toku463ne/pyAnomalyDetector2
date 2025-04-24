@@ -4,13 +4,17 @@ admdb:
   password: '{{ ADM_DB_PASSWORD }}'
   dbname: anomdec
   port: 5432
+  schema: public
 
 logging:
+  enabled: true
   level: INFO
-  log_file: /tmp/anomdec-test_zabbix.log
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "app.log"
+  log_dir: "{{ HOME }}/anomdec/logs"
 
 data_sources:
-  - name: "test_zabbix"
+  test_zabbix: 
     type: "zabbix"
     host: 192.168.32.101
     dbname: zabbix
@@ -82,7 +86,7 @@ data_sources:
       
 
 view_sources:
-  - name: "test_zabbix"
+  test_zabbix:
     dashboard_name: "anomaly_check_new"
     type: "zabbix_dashboard"
     api_url: "http://192.168.32.10/zabbix"

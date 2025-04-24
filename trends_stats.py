@@ -10,6 +10,7 @@ from models.history_updates import HistoryUpdatesModel
 
 def log(msg, level=logging.INFO):
     msg = f"[trends_stats.py] {msg}"
+    print(msg)
     logging.log(level, msg)
 
 def update_stats(conf: Dict, 
@@ -20,7 +21,7 @@ def update_stats(conf: Dict,
                 itemIds: List[int] = None,
                 initialize: bool = False, max_itemIds = 0):
     data_sources = conf['data_sources']
-    log(f"starting with config: {conf}")
+    log(f"starting")
 
     if endep == 0:
         endep = int(time.time())
