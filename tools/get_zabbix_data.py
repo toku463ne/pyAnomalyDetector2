@@ -1,97 +1,77 @@
 from typing import List, Dict
+import os
 
 import __init__
 import utils.config_loader as config_loader
 from data_getter.zabbix_getter import ZabbixGetter
+from models.models_set import ModelsSet
 
-def trends2csv(data_source_config: Dict, itemIds: List[int], startep: int, endep: int, outfile: str):
-    z = ZabbixGetter(data_source_config)
-    # remove outfile if exists
-    if os.path.exists(outfile):
-        os.remove(outfile)
 
-    # do by batch
-    for i in range(0, len(itemIds), 100):
-        batch_itemIds = itemIds[i:i+100]
-        df = z.get_trends_full_data(startep, endep, itemIds=batch_itemIds)
+class ZabbixDataExporter:
+    history_file_name = "history.csv.gz"
+    trends_file_name = "trends.csv.gz"
+    item_details_file_name = "item_details.csv.gz"
+
+    def __init__(self, config: Dict, output_dir: str, history_length: int, trends_length: int):
+        self.history_length = history_length
+        self.trends_length = trends_length
+        self.output_dir = output_dir
+        # ensure the output directory exists
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        self.conf = config
+        self.data_source_config = {}
+        for data_source_name in self.conf["data_sources"]:
+            data_source_config = self.conf["data_sources"][data_source_name]
+            if data_source_config["type"] == "zabbix":
+                self.data_source_config = data_source_config
+                self.data_source_name = data_source_name
+                break
+
+        self.ms = ModelsSet(self.data_source_name)
+        self.z = ZabbixGetter(self.data_source_config)
+
+
+    def export_data(self, endep: int, itemIds: List[int]):
+        df = self.z.get_trends_full_data(endep - self.trends_length, endep, itemIds=itemIds)
         # Save the DataFrame to a gzipped CSV file
-        df.to_csv(outfile, mode='a', index=False, compression='gzip')
+        file_path = os.path.join(self.output_dir, self.trends_file_name)
+        df.to_csv(file_path, mode='w', index=False, compression='gzip')
 
-
-def history2csv(data_source_config: Dict, itemIds: List[int], startep: int, endep: int, outfile: str):
-    z = ZabbixGetter(data_source_config)
-    # remove outfile if exists
-    if os.path.exists(outfile):
-        os.remove(outfile)
-
-    # do by batch
-    for i in range(0, len(itemIds), 100):
-        batch_itemIds = itemIds[i:i+100]
-        df = z.get_history_data(startep, endep, itemIds=batch_itemIds)
+        df = self.z.get_history_data(endep - self.history_length, endep, itemIds=itemIds)
         # Save the DataFrame to a gzipped CSV file
-        df.to_csv(outfile, mode='a', index=False, compression='gzip')
-    
+        file_path = os.path.join(self.output_dir, self.history_file_name)
+        df.to_csv(file_path, mode='w', index=False, compression='gzip')
 
-def ouput_item_relations(data_source_config: Dict, itemIds: List[int], group_names: List[str], outfile: str):
-    z = ZabbixGetter(data_source_config)
-    # remove outfile if exists
-    if os.path.exists(outfile):
-        os.remove(outfile)
+        df = self.z.get_item_details(itemIds=itemIds)
+        # Save the DataFrame to a gzipped CSV file
+        file_path = os.path.join(self.output_dir, self.item_details_file_name)
+        df.to_csv(file_path, mode='w', index=False, compression='gzip')
 
-    df = z.get_item_details(itemIds=itemIds)
-    
-    # Save the DataFrame to a gzipped CSV file
-    df.to_csv(outfile, index=False, compression='gzip')
-    
+
+    def export_data_from_anomalies(self):
+        itemIds = self.ms.anomalies.get_itemids()
+        endep = self.ms.anomalies.get_last_updated()
+        self.export_data(endep, itemIds)
+
+
 
 
 if __name__ == '__main__':
-    import argparse, os
+    import argparse
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-c', '--config', type=str, help='config yaml file')
-    parser.add_argument('--end', type=int, default=0, help='End epoch.')
-    parser.add_argument('--itemsfile', type=str, help='txt file including itemids')
-    parser.add_argument('--groupsfile', type=str, help='txt file including host group names')
     parser.add_argument('--outdir', type=str, help='output directory')
+    parser.add_argument('--history_length', type=int, default=600 * 18, help='history length in seconds')
+    parser.add_argument('--trends_length', type=int, default=3600 * 24 * 14, help='trends length in seconds')
     args = parser.parse_args()
     
-    itemIds = []
-    with open(args.itemsfile, "r") as f:
-        for itemId in f:
-            itemIds.append(itemId)
+    config = config_loader.load_config(args.config)
+    output_dir = args.outdir
+    history_length = args.history_length
+    trends_length = args.trends_length
+    zabbix_data_exporter = ZabbixDataExporter(config, output_dir, history_length, trends_length)
+    zabbix_data_exporter.export_data_from_anomalies()
 
-    group_names = []
-    with open(args.groupsfile, "r") as f:
-        for g in f:
-            group_names.append(g.strip())
 
-    config_loader.load_config(args.config)
-    conf = config_loader.conf
-    endep = args.end
-
-    trends_interval = conf["trends_interval"]
-    trends_retention = conf["trends_retention"]
-    trend_startep = endep - trends_interval * trends_retention
-
-    dbscan_config = conf["dbscan"]
-    history_interval = conf["history_interval"]
-    history_retention = dbscan_config["detection_period"]
-    history_startep = endep - history_interval * history_retention
     
-    trends_file = os.path.join(args.outdir, "trends.csv.gz")
-    history_file = os.path.join(args.outdir, "history.csv.gz")
-    items_file = os.path.join(args.outdir, "items.csv.gz")
-    
-    data_source_config = {}
-    for data_source_config in conf["data_sources"]:
-        if data_source_config["type"] == "zabbix":
-            break
-    if data_source_config == {}:
-        print("no data source with type=zabbix")
-        exit(1)
-
-
-    trends2csv(data_source_config, itemIds, trend_startep, endep, trends_file)
-    history2csv(data_source_config, itemIds, history_startep, endep, history_file)
-    ouput_item_relations(data_source_config, itemIds, group_names, items_file)
-
