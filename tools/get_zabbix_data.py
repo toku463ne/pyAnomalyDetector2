@@ -11,6 +11,7 @@ class ZabbixDataExporter:
     history_file_name = "history.csv.gz"
     trends_file_name = "trends.csv.gz"
     item_details_file_name = "items.csv.gz"
+    anom_data_file_name = "anomalies.csv.gz"
 
     def __init__(self, config: Dict, output_dir: str, history_length: int, trends_length: int):
         self.history_length = history_length
@@ -62,6 +63,12 @@ class ZabbixDataExporter:
         itemIds = self.ms.anomalies.get_itemids()
         endep = self.ms.anomalies.get_last_updated()
         self.export_data(endep, itemIds)
+
+        anom_data = self.ms.anomalies.get_data()
+        # Save the DataFrame to a gzipped CSV file
+        file_path = os.path.join(self.output_dir, self.anom_data_file_name)
+        anom_data.to_csv(file_path, mode='w', index=False, compression='gzip')
+        print(f"anomalies data written to {file_path}")
 
 
 
