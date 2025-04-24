@@ -10,7 +10,7 @@ from models.models_set import ModelsSet
 class ZabbixDataExporter:
     history_file_name = "history.csv.gz"
     trends_file_name = "trends.csv.gz"
-    item_details_file_name = "item_details.csv.gz"
+    item_details_file_name = "items.csv.gz"
 
     def __init__(self, config: Dict, output_dir: str, history_length: int, trends_length: int):
         self.history_length = history_length

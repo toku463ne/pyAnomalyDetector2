@@ -6,7 +6,7 @@ import utils.config_loader as config_loader
 import data_getter
 from data_processing.detector import Detector
 import classifiers.dbscan as dbscan
-import models.models_set as models_set
+from models.models_set import ModelsSet
 
 STAGE_DETECT1 = 1
 STAGE_DETECT2 = 2
@@ -45,6 +45,7 @@ def run(conf: Dict, endep: int = 0,
         ) -> List[int]:
 
     log("starting")
+
     
     if item_names is None:
         item_names = conf.get('item_names', [])
@@ -96,7 +97,9 @@ def run(conf: Dict, endep: int = 0,
         d.insert_anomalies(endep, anomaly_itemIds)
 
     # classify anomaly charts
-    classified_itemIds = ms.anomalies.get_itemids()
+    classified_itemIds = []
+    for data_source_name in data_sources:
+        classified_itemIds.extend(ModelsSet(data_source_name).anomalies.get_itemids())
     if len(classified_itemIds) > 1:
         log("classifying charts")
         dbscan.classify_charts(conf, classified_itemIds, endep=endep)
