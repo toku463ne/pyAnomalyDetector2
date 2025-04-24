@@ -33,17 +33,20 @@ class ZabbixDataExporter:
 
 
     def export_data(self, endep: int, itemIds: List[int]):
+        print("exporting trends data")
         df = self.z.get_trends_full_data(endep - self.trends_length, endep, itemIds=itemIds)
         # Save the DataFrame to a gzipped CSV file
         file_path = os.path.join(self.output_dir, self.trends_file_name)
         df.to_csv(file_path, mode='w', index=False, compression='gzip')
 
+        print("exporting history data")
         df = self.z.get_history_data(endep - self.history_length, endep, itemIds=itemIds)
         # Save the DataFrame to a gzipped CSV file
         file_path = os.path.join(self.output_dir, self.history_file_name)
         df.to_csv(file_path, mode='w', index=False, compression='gzip')
 
-        df = self.z.get_item_details(itemIds=itemIds)
+        print("exporting items details")
+        df = self.z.get_items_details(itemIds=itemIds)
         # Save the DataFrame to a gzipped CSV file
         file_path = os.path.join(self.output_dir, self.item_details_file_name)
         df.to_csv(file_path, mode='w', index=False, compression='gzip')
@@ -61,7 +64,7 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-c', '--config', type=str, help='config yaml file')
-    parser.add_argument('--outdir', type=str, help='output directory')
+    parser.add_argument('-o', '--outdir', type=str, help='output directory')
     parser.add_argument('--history_length', type=int, default=600 * 18, help='history length in seconds')
     parser.add_argument('--trends_length', type=int, default=3600 * 24 * 14, help='trends length in seconds')
     args = parser.parse_args()
