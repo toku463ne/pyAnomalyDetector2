@@ -78,7 +78,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-c', '--config', type=str, help='config yaml file')
     parser.add_argument('-o', '--outdir', type=str, help='output directory')
-    parser.add_argument('--history_length', type=int, default=600 * 18, help='history length in seconds')
+    parser.add_argument('--history_length', type=int, default=3600 * 24, help='history length in seconds')
     parser.add_argument('--trends_length', type=int, default=3600 * 24 * 14, help='trends length in seconds')
     args = parser.parse_args()
     

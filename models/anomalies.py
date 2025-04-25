@@ -65,7 +65,15 @@ class AnomaliesModel(Model):
     ({row.itemid}, {row.created}, 
      {row.hostid}, {row.clusterid}, 
      '{row.group_name}', '{row.host_name}', '{item_name}', {row.trend_mean}, 
-     {row.trend_std})"""
+     {row.trend_std})
+    ON CONFLICT (itemid, created, group_name) DO UPDATE SET
+        hostid = EXCLUDED.hostid,
+        clusterid = EXCLUDED.clusterid,
+        host_name = EXCLUDED.host_name,
+        item_name = EXCLUDED.item_name,
+        trend_mean = EXCLUDED.trend_mean,
+        trend_std = EXCLUDED.trend_std
+    """
             self.db.exec_sql(sql)
 
     def update_clusterid(self, clusters: Dict):
@@ -104,3 +112,11 @@ class AnomaliesModel(Model):
             stats[row.itemid] = {"mean": row.trend_mean, "std": row.trend_std}
         
         return stats
+    
+
+    def import_data(self, csv_file: str, itemIds: List[int] = []):
+        df = pd.read_csv(csv_file)
+        df.columns = self.fields
+        if len(itemIds) > 0:
+            df = df[df.itemid.isin(itemIds)]
+        self.insert_data(df)

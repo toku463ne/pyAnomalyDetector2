@@ -147,7 +147,7 @@ class StreamlitView(View):
             height=max(self.chart_height * n_rows + 100, 400),
             width=max(self.chart_width * n_cols + 200, 900),
             autosize=True,
-            margin=dict(l=20, r=20, t=20, b=20),
+            margin=dict(l=20, r=20, t=70, b=20),
             showlegend=False,
         )
         return fig
@@ -250,7 +250,7 @@ class StreamlitView(View):
                 tabs = st.tabs(tab_names)
                 for tab, group_name in zip(tabs, tab_names):
                     with tab:
-                        st.plotly_chart(charts[int(group_name)], use_container_width=True, key=f"plotly_chart_{group_name}")
+                        st.plotly_chart(charts[group_name], use_container_width=True, key=f"plotly_chart_{group_name}")
         else:
             st.warning(f"Category '{categoryid}' is not supported in Streamlit view.")
 
