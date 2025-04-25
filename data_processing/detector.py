@@ -39,6 +39,7 @@ class Detector:
         self.history_recent_retention = config["history_recent_retention"]
         self.trends_retention = config["trends_retention"]
         self.anomaly_valid_count_rate = config["anomaly_valid_count_rate"]
+        self.anomaly_keep_secs = config["anomaly_keep_secs"]
         
         self.data_source = data_source
         self.data_source_name = data_source_name
@@ -113,7 +114,7 @@ class Detector:
         if len(itemIds) == 0:
             itemIds = self.itemIds
         history_interval = self.history_interval
-        startep = endep - history_interval * self.history_retention
+        startep = endep - self.anomaly_keep_secs
         oldep = startep - history_interval
         base_clocks = normalizer.get_base_clocks(startep, endep, history_interval)
 
@@ -571,7 +572,7 @@ class Detector:
 
 
 
-    def insert_anomalies(self, created: int, itemIds: List[int]=[]):
+    def update_anomalies(self, created: int, itemIds: List[int]=[]):
         dg = self.dg
         ms = self.ms
         if len(itemIds) == 0:
@@ -610,3 +611,5 @@ class Detector:
         df['created'] = df['created'].astype(int)
         
         ms.anomalies.insert_data(df)
+
+        ms.anomalies.delete_old_entries(created - self.anomaly_keep_secs)

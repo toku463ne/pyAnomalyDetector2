@@ -94,7 +94,8 @@ def run(conf: Dict, endep: int = 0,
             log(f"running detect3 for {data_source_name}")
             anomaly_itemIds = d.detect3(anomaly_itemIds, endep)
 
-        d.insert_anomalies(endep, anomaly_itemIds)
+        d.update_anomalies(endep, anomaly_itemIds)
+        
 
     # classify anomaly charts
     classified_itemIds = []

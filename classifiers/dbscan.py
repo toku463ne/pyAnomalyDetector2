@@ -12,9 +12,8 @@ def classify_charts(conf: Dict, itemIds: List[int], endep: int,
     charts = {}
     chart_stats = {}
     data_sources = conf['data_sources']
-    history_interval = conf['history_interval']
-    history_retention = conf['history_retention']
-    startep = endep - history_interval * history_retention
+    anomaly_keep_secs = conf.get('anomaly_keep_secs', 3600 * 24)
+    startep = endep - anomaly_keep_secs
     for data_source_name in data_sources:
         ms = ModelsSet(data_source_name)
         stats = ms.trends_stats.get_stats_per_itemId(itemIds=itemIds)

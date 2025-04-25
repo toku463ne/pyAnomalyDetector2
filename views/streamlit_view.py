@@ -212,14 +212,13 @@ class StreamlitView(View):
         charts_fig = {}
         for group_name in charts:
             itemIds = charts[group_name]['itemid'].unique()
-            if len(itemIds) > self.max_charts:
-                for i in range(0, len(itemIds), self.max_charts):
-                    sub_group_name = f"{group_name}_{i}"
-                    itemIds_block = itemIds[i:i + self.max_charts]
-                    df_block = charts[group_name][charts[group_name]['itemid'].isin(itemIds_block)]
-                    charts_fig[sub_group_name] = self._generate_charts_in_group(df_block, properties)
-            else:
-                charts_fig[group_name] = self._generate_charts_in_group(charts[group_name], properties)
+            round = 0
+            for i in range(0, len(itemIds), self.max_charts):
+                sub_group_name = f"{group_name}_{round}"
+                itemIds_block = itemIds[i:i + self.max_charts]
+                df_block = charts[group_name][charts[group_name]['itemid'].isin(itemIds_block)]
+                charts_fig[sub_group_name] = self._generate_charts_in_group(df_block, properties)
+                round += 1
         return charts_fig
 
     def _generate_charts_by_group(self) -> Dict[str, go.Figure]:
