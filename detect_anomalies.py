@@ -100,7 +100,10 @@ def run(conf: Dict, endep: int = 0,
     # classify anomaly charts
     classified_itemIds = []
     for data_source_name in data_sources:
-        classified_itemIds.extend(ModelsSet(data_source_name).anomalies.get_itemids())
+        anom = ModelsSet(data_source_name).anomalies
+        anom_itemIds = anom.get_itemids()
+        d.update_history(endep, anom_itemIds)
+        classified_itemIds.extend(anom_itemIds)
     if len(classified_itemIds) > 1:
         log("classifying charts")
         clusters, _, _ = dbscan.classify_charts(conf, classified_itemIds, endep=endep)
