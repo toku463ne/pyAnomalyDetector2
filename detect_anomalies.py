@@ -94,7 +94,11 @@ def run(conf: Dict, endep: int = 0,
             log(f"running detect3 for {data_source_name}")
             anomaly_itemIds = d.detect3(anomaly_itemIds, endep)
 
-        d.update_anomalies(endep, anomaly_itemIds)
+        group_map = {}
+        if len(anomaly_itemIds) > 0 and len(group_names) > 0:
+            group_map = dg.get_group_map(anomaly_itemIds, group_names)
+
+        d.update_anomalies(endep, anomaly_itemIds, group_map=group_map)
         
 
     # classify anomaly charts

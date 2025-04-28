@@ -571,8 +571,8 @@ class Detector:
 
 
 
-
-    def update_anomalies(self, created: int, itemIds: List[int]=[]):
+    # group_map is a dict of itemId to group_name
+    def update_anomalies(self, created: int, itemIds: List[int]=[], group_map: Dict[int, str] = {}):
         dg = self.dg
         ms = self.ms
         if len(itemIds) == 0:
@@ -603,6 +603,11 @@ class Detector:
         df['clusterid'] = -1
         df['hostid'] = df['hostid'].astype(int)
         df['itemid'] = df['itemid'].astype(int)
+        # Apply group_map if itemid is in group_map
+        if group_map:
+            df['group_name'] = df.apply(
+            lambda row: group_map.get(row['itemid'], row['group_name']), axis=1
+            )
         df['group_name'] = df['group_name'].astype(str)
         df['host_name'] = df['host_name'].astype(str)
         df['item_name'] = df['item_name'].astype(str)

@@ -301,3 +301,34 @@ class ZabbixGetter(DataGetter):
         df.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
 
         return df
+    
+
+    def get_group_map(self, itemIds: List[int], group_names: List[str]) -> Dict[int, str]:
+        if len(itemIds) == 0:
+            return {}
+        
+        if len(group_names) == 0:
+            return {}
+        
+        group_map = {}
+        for group_name in group_names:
+            sql = f"""
+                SELECT items.itemid
+                FROM hosts 
+                inner join items on hosts.hostid = items.hostid
+                inner join hosts_groups on hosts_groups.hostid = hosts.hostid
+                inner join hstgrp on hstgrp.groupid = hosts_groups.groupid 
+                WHERE (hstgrp.name = '{group_name}' OR hstgrp.name LIKE '{group_name}/%') 
+                AND items.itemid IN ({",".join(map(str, itemIds))})
+            """
+
+            cur = self.db.exec_sql(sql)
+            rows = cur.fetchall()
+            cur.close()
+            if len(rows) == 0:
+                continue
+
+            for row in rows:
+                group_map[row[0]] = group_name
+
+        return group_map
