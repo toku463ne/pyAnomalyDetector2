@@ -103,7 +103,9 @@ def run(conf: Dict, endep: int = 0,
         classified_itemIds.extend(ModelsSet(data_source_name).anomalies.get_itemids())
     if len(classified_itemIds) > 1:
         log("classifying charts")
-        dbscan.classify_charts(conf, classified_itemIds, endep=endep)
+        clusters, _, _ = dbscan.classify_charts(conf, classified_itemIds, endep=endep)
+        ModelsSet(data_source_name).anomalies.update_clusterid(clusters)
+
 
     log("completed")
 
