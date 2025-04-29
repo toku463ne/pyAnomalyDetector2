@@ -8,7 +8,7 @@ from typing import Dict
 
 class View(ABC):
     
-    def show(self, trend_start=0, history_start=0, history_end=0) -> None:
+    def run(self) -> None:
         pass
 
     def check_conn(self) -> bool:

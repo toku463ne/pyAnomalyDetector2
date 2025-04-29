@@ -1,0 +1,14 @@
+[Unit]
+Description=Streamlit Service
+After=network.target
+
+[Service]
+User={{ ANOMDEC_STREAMLIT_USER }}
+WorkingDirectory={{ ANOMDEC_STREAMLIT_WORKING_DIR }}
+ExecStart={{ ANOMDEC_STREAMLIT_PATH }} run {{ ANOMDEC_STREAMLIT_APP_PATH }} --server.port={{ ANOMDEC_STREAMLIT_PORT }} --server.address={{ ANOMDEC_STREAMLIT_HOST }}
+Restart=always
+Environment="PATH={{ ANOMDEC_ENVIRONMENT_PATH }}"
+
+
+[Install]
+WantedBy=multi-user.target

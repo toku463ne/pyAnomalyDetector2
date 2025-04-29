@@ -3,9 +3,11 @@ Update the zabbix_dashboard view
 """
 import pandas as pd
 from pyzabbix import ZabbixAPI
-
-from views.view import View
 import logging
+
+from models.models_set import ModelsSet
+from views.zabbix_dashboard import ZabbixDashboard
+import utils.config_loader as config_loader
 
 def log(msg, level=logging.INFO):
     msg = f"[views/zabbix.py] {msg}"
@@ -17,10 +19,11 @@ class ZabbixDashboard(View):
         zapi = ZabbixAPI(config["api_url"])
         zapi.login(config["user"], config["password"])
         self.zapi = zapi
+        self.config = config
 
 
     # show dashboard
-    def show(self, data: pd.DataFrame):
+    def update(self, data: pd.DataFrame):
         log("show dashboard")
         if len(data) == 0:
             return
@@ -41,7 +44,7 @@ class ZabbixDashboard(View):
         self.create_dashboard(self.dashboard_name, pagedata)
         log("completed")
 
-    def show_latest(self, data: pd.DataFrame):
+    def update_latest(self, data: pd.DataFrame):
         log("show latest dashboard")
         if len(data) == 0:
             return
@@ -61,7 +64,7 @@ class ZabbixDashboard(View):
         self.create_dashboard(dashboard_name, pagedata)
         log("completed")
 
-    def show_by_cluster(self, data: pd.DataFrame):
+    def update_cluster(self, data: pd.DataFrame):
         log("show by cluster dashboard")
         if len(data) == 0:
             return
@@ -162,9 +165,6 @@ class ZabbixDashboard(View):
         zapi = self.zapi
         d =     self.get_dashboard(dashboard_name)
         zapi.dashboard.update(dashboardid=d["dashboardid"], pages=pages)
-
-
-
 
 
 

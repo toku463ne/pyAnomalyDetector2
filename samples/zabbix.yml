@@ -1,5 +1,5 @@
 admdb:
-  host: 192.168.4.91
+  host: '{{ ADM_DB_HOST }}'
   user: anomdec
   password: '{{ ADM_DB_PASSWORD }}'
   dbname: anomdec
@@ -9,14 +9,14 @@ admdb:
 logging:
   enabled: true
   level: INFO
-  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-  file: "app.log"
+  format: "%(asctime)s %(name)s %(levelname)s | %(message)s"
+  file: "zabbix.log"
   log_dir: "{{ HOME }}/anomdec/logs"
 
 data_sources:
   test_zabbix: 
     type: "zabbix"
-    host: 192.168.32.101
+    host: '{{ ZABBIX_DB_HOST }}'
     dbname: zabbix
     user: monitoring
     password: '{{ ZABBIX_DB_PASSWORD }}'
@@ -78,7 +78,7 @@ data_sources:
         condition: #value > 3
           operator: '>'
           value: 3
-      - name: ignore 5 degrees of tempuratures
+      - name: ignore 5 degrees of temperatures
         filter: "units = '°C'"
         condition:
           operator: '>'
@@ -89,9 +89,9 @@ view_sources:
   test_zabbix:
     dashboard_name: "anomaly_check_new"
     type: "zabbix_dashboard"
-    api_url: "http://192.168.32.10/zabbix"
-    user: "{{ API_USER }}"
-    password: "{{ API_PASSWORD }}"
+    api_url: "{{ ZABBIX_API_URL }}"
+    user: "{{ ZABBIX_API_USER }}"
+    password: "{{ ZABBIX_API_PASSWORD }}"
     data_source_name: "test_zabbix"
 
 group_names:

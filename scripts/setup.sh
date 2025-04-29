@@ -22,8 +22,11 @@ source $HOME/venv/bin/activate
 # Install required Python packages
 pip install -r requirements.txt
 
-# Compile cython codes
-#python setup.py build_ext --inplace
-
+# deploying streamlit with nginx
+sudo python scripts/setup_streamlit.py
+sudo systemctl reload nginx
+sudo systemctl daemon-reload
+sudo systemctl enable streamlit.service
+sudo systemctl start streamlit.service
 
 echo "Setup complete. Virtual environment created and dependencies installed."

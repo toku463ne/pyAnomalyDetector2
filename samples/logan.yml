@@ -1,0 +1,26 @@
+admdb:
+  host: '{{ ADM_DB_HOST }}'
+  user: anomdec
+  password: '{{ ADM_DB_PASSWORD }}'
+  dbname: anomdec
+  port: 5432
+  schema: public
+
+logging:
+  enabled: true
+  level: INFO
+  format: "%(asctime)s %(name)s %(levelname)s | %(message)s"
+  file: "logan.log"
+  log_dir: "{{ HOME }}/anomdec/logs"
+
+data_sources:
+  test_logan:
+    type: "logan"
+    base_url: '{{ LOGAN_BASE_URL }}'
+    group_names:
+      hw/nw: 
+        host_names:
+          - IMTFW001
+          - NFPFW003
+          - SOPHOS-01
+          - pfsense67051_openvpn
