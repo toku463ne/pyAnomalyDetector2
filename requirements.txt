@@ -1,4 +1,5 @@
 numpy
+six
 pandas
 scikit-learn
 matplotlib

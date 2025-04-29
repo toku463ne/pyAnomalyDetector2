@@ -6,8 +6,8 @@ from pyzabbix import ZabbixAPI
 import logging
 
 from models.models_set import ModelsSet
-from views.zabbix_dashboard import ZabbixDashboard
 import utils.config_loader as config_loader
+from views.view import View
 
 def log(msg, level=logging.INFO):
     msg = f"[views/zabbix.py] {msg}"

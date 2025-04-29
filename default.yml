@@ -13,12 +13,12 @@ logging:
 #  admdb: PostgreSQL database for AnomDec admin
 ##################################################
 admdb:
-  host: localhost
-  user: anomdec_adm
-  password: "{{ ADM_DB_PASSWORD }}"
+  host: '{{ ADM_DB_HOST }}'
+  user: anomdec
+  password: '{{ ADM_DB_PASSWORD }}'
   dbname: anomdec
   port: 5432
-  schema: anomdec
+  schema: public
 
 
 ##################################################

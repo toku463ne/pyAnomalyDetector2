@@ -58,7 +58,7 @@ class LoganGetter(DataGetter):
 
     def _load_host_data(self, host_name: str):
         # get loggroups data
-        url = self.base_url + host_name + '/logGroups.csv'
+        url = self.base_url + '/' + host_name + '/logGroups.csv'
         response = requests.get(url, headers=self.headers)
         if response.status_code == 200:
             data = pd.read_csv(url)
@@ -76,7 +76,7 @@ class LoganGetter(DataGetter):
         itemIds = list(set(itemIds))
         
         # get metrics data
-        url = self.base_url + host_name + '/history.csv'
+        url = self.base_url + '/' + host_name + '/history.csv'
         response = requests.get(url, headers=self.headers)
         if response.status_code == 200:
             data = pd.read_csv(url)
@@ -146,27 +146,27 @@ class LoganGetter(DataGetter):
         return itemIds
     
 
-    def get_history_data(self, startep, endep, itemIds = ...):
+    def get_history_data(self, startep, endep, itemIds = []):
         if len(self.data) == 0:
             self._load_data()
         data = pd.DataFrame(columns=self.fields)
         for host in self.host_names:
             data = pd.concat([data, self.data[host]])
             # filter by itemIds
-            if itemIds is not ...:
+            if len(itemIds) > 0:
                 data = data[data['itemid'].isin(itemIds)]
             # filter by time
             data = data[(data['clock'] >= startep) & (data['clock'] <= endep)]
         return data
             
-    def get_trends_data(self, startep, endep, itemIds = ...):
+    def get_trends_data(self, startep, endep, itemIds = []):
         data = self.get_history_data(startep, endep, itemIds)
         # sum values by trends_interval, use the first clock
         data['clock'] = data['clock'] // self.trends_interval
         data = data.groupby(['itemid', 'clock']).mean().reset_index()
         return data
     
-    def get_trends_full_data(self, startep, endep, itemIds = ...):
+    def get_trends_full_data(self, startep, endep, itemIds = []):
         data = self.get_history_data(startep, endep, itemIds)
         # sum values by trends_interval, use the first clock
         data['clock'] = data['clock'] // self.trends_interval

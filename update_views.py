@@ -5,16 +5,20 @@ target_views = ["zabbix_dashboard"]
 from typing import Dict
 
 import utils.config_loader as config_loader
+from models.models_set import ModelsSet
 import views
 
 def update(conf: Dict) :
     view_sources = conf.get('view_sources', [])
     for view_source_name in view_sources:
-        if view_source_name not in target_views:
-            continue
         view_source = view_sources[view_source_name]
+        if view_source["type"] not in target_views:
+            continue
+        ms = ModelsSet(view_source["data_source_name"])
+        df = ms.anomalies.get_data()
         v = views.get_view(view_source)
-        v.update()
+        v.update(df)
+        v.update_cluster(df)
 
 if __name__ == "__main__":
     # read arguments

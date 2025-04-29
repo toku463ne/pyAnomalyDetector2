@@ -73,7 +73,7 @@ class Detector:
         history_retention = self.history_retention
         oldstartep = ms.history_updates.get_startep()
         if endep == 0:
-            endep = self.endep
+            endep = int(time.time())
         # get start time
         startep = endep - history_retention * history_interval
 
