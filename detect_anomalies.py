@@ -99,11 +99,20 @@ def run(conf: Dict, endep: int = 0,
             group_map = dg.get_group_map(anomaly_itemIds, group_names)
 
         d.update_anomalies(endep, anomaly_itemIds, group_map=group_map)
-        
 
+    log("completed")
+    return anomaly_itemIds
+
+
+
+def classify_charts(endep: int):
+    log("starting classification")
     # classify anomaly charts
     classified_itemIds = []
+    conf = config_loader.conf
+    data_sources = conf['data_sources']
     for data_source_name in data_sources:
+        d = Detector(data_source_name, data_sources[data_source_name])
         anom = ModelsSet(data_source_name).anomalies
         anom_itemIds = anom.get_itemids()
         d.update_history(endep, anom_itemIds)
@@ -113,10 +122,9 @@ def run(conf: Dict, endep: int = 0,
         clusters, _, _ = dbscan.classify_charts(conf, classified_itemIds, endep=endep)
         ModelsSet(data_source_name).anomalies.update_clusterid(clusters)
 
-
     log("completed")
 
-    return anomaly_itemIds
+    
 
 if __name__ == "__main__":
     # read arguments
@@ -149,3 +157,4 @@ if __name__ == "__main__":
         itemIds=args.itemids,
         skip_history_update=args.skip_history_update,
     )
+    classify_charts()
