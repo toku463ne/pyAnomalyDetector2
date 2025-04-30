@@ -36,4 +36,4 @@ def import_test_data(conf: Dict, itemIds: List[int], endep: int):
         d.initialize_data()
         d.update_history(endep)
         d.update_history_stats(endep)
-        d.insert_anomalies(endep)
+        d.update_anomalies(endep)

@@ -1,6 +1,6 @@
 admdb:
   host: localhost
-  user: anomdec_adm
+  user: anomdec
   password: "{{ ADM_DB_PASSWORD }}"
   dbname: anomdec_test
   port: 5432

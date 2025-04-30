@@ -231,8 +231,8 @@ class StreamlitView(View):
 
     def run(self) -> None:
         # Add a unique key to force Streamlit to reload the component on browser reload
-        st.experimental_set_query_params(reload_key=str(os.urandom(16)))
-        st.set_page_config(layout="wide")        
+        #st.query_params(reload_key=str(os.urandom(16)))
+        #st.set_page_config(layout="wide")        
         st.title("Anomaly Detector Charts")
 
         categoryid = st.radio(

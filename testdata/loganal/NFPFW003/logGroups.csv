@@ -1,0 +1,101 @@
+groupId,count,score,text
+1739990606000000004,725967,4.32,duration=* policy_id=* service=Network Time proto=* src zone=Trust dst zone=Untrust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1739990606000000001,441042,4.28,duration=* policy_id=* service=tcp/port:* proto=* src zone=Trust dst zone=Untrust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1739990606000000003,272686,4.48,duration=* policy_id=* service=udp/port:* proto=* src zone=Trust dst zone=Untrust action=Deny sent=* rcvd=* src=192.168.12.14 dst=52.195.66.130 src_port=* dst_port=* session_id=* reason=Traffic Denied
+1739990609000000007,190161,4.38,duration=* policy_id=* service=tcp/port:* proto=* src zone=Trust dst zone=Untrust action=Deny sent=* rcvd=* src=192.168.4.78 dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1739990621000000015,120007,4.28,duration=* policy_id=* service=tcp/port:* proto=* src zone=Untrust dst zone=Trust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1739990613000000012,86031,6.76,* * IKESA: Initiated negotiations.
+1739991001000000037,82412,4.40,duration=* policy_id=* service=tcp/port:* proto=* src zone=OpenVPN dst zone=Trust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745305568000000004,78669,4.46,duration=* policy_id=* service=* proto=* src zone=DMZ dst zone=Untrust action=Deny sent=* rcvd=* src=192.168.64.7 dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1742538096000000001,68381,6.78,IKE * * packet: Retransmission limit has been reached.
+1739990641000000019,61528,6.72,IKE * Phase *: Retransmission limit has been reached.
+1745520424000000002,61168,4.51,duration=* policy_id=* service=tcp/port:* proto=* src zone=Untrust dst zone=Trust action=Deny sent=* rcvd=* src=192.168.140.88 dst=192.168.254.105 src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745520420000000001,60104,4.40,duration=* policy_id=* service=tcp/port:* proto=* src zone=Trust dst zone=Untrust action=Deny sent=* rcvd=* src=192.168.4.49 dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1739990634000000018,57766,4.38,duration=* policy_id=* service=tcp/port:* proto=* src zone=DMZ dst zone=Trust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1739990654000000024,41154,6.92,IKE202.214.113.11 * Phase *: Initiated negotiations * main mode.
+1739990607000000005,40463,6.75,IKE 210.184.113.40 Phase *: * * MAIN mode negotiations.
+1739990607000000006,40453,7.88,Rejected an IKE packet on ethernet0/* from 210.184.113.40:* to 202.214.113.11:* with cookies * and * because There were no acceptable Phase * proposals.
+1739990611000000009,38974,7.82,"IKE 210.184.113.40 Phase *: Discarded a second initial packet, which arrived within * seconds after the first."
+1739990618000000013,26500,7.04,IKE * IKESA: Responder starts negotiations.
+1739990618000000014,26446,7.20,IKE * * SA with IKE SA *: Initiated negotiations.
+1739990649000000022,22664,4.26,duration=* policy_id=* service=* (tcp) proto=* src zone=Untrust dst zone=Trust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745800838000000001,20964,4.49,duration=* policy_id=* service=tcp/port:* proto=* src zone=DMZ dst zone=Trust action=Deny sent=* rcvd=* src=192.168.64.7 dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1739990653000000023,20378,6.94,IKE124.35.140.186 * Phase *: Initiated negotiations * main mode.
+1745764821000000001,17692,0.00,IKE * IKEV2 packet: Retransmission limit has been reached.
+1739992499000000009,17469,4.33,duration=* policy_id=* service=udp/port:* proto=* src zone=Trust dst zone=Untrust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1743376704000000005,16818,0.00,duration=* policy_id=* service=udp/port:* proto=* src zone=OpenVPN dst zone=Trust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745278078000000021,15644,4.47,duration=* policy_id=* service=https proto=* src zone=DMZ dst zone=Untrust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1743987296000000007,12924,4.57,duration=* policy_id=* service=snmp proto=* src zone=OpenVPN dst zone=Trust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1744902005000000001,12198,4.45,duration=* policy_id=* service=NETBIOS (*) proto=* src zone=Trust dst zone=Untrust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745490155000000004,8968,4.54,duration=* policy_id=* service=* proto=* src zone=DMZ dst zone=Untrust action=Deny sent=* rcvd=* src=192.168.64.161 dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745430056000000002,6864,6.76,IKE 210.184.113.40 Phase *: Retransmission limit has been reached.
+1739990655000000025,5798,6.84,* 210.184.113.40 Phase *: Initiated negotiations * main mode.
+1745768453000000002,5840,0.00,IKE202.214.113.11 * IKESA: Initiated negotiations.
+1739990880000000033,5400,4.44,duration=* policy_id=* service=tcp/port:* proto=* src zone=Trust dst zone=Untrust action=Deny sent=* rcvd=* src=192.168.12.14 dst=52.195.66.130 src_port=* dst_port=* session_id=* reason=Traffic Denied
+1739990655000000026,5140,5.62,duration=* policy_id=* service=tcp/port:* proto=* src zone=Trust dst zone=Untrust action=Permit sent=* rcvd=* src=* dst=* src_port=* dst_port=* src-xlated ip=202.214.113.11 port=* dst-xlated ip=* port=* session_id=* reason=Close - TCP *
+1740009068000000005,3936,5.77,duration=* policy_id=* service=tcp/port:* proto=* src zone=Trust dst zone=DMZ action=Permit sent=* rcvd=* src=* dst=* src_port=* dst_port=* src-xlated ip=* port=* dst-xlated ip=* port=* session_id=* reason=Close - TCP RST
+1739995470000000001,3585,4.45,duration=* policy_id=* service=* proto=* src zone=Untrust dst zone=Trust action=Deny sent=* rcvd=* src=121.97.69.117 dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745862033000000001,3188,0.00,IKE * 189.115.47.130: Received a notification message for * NOTIFY_MSG_INVALID_SYNTAX.
+1739990870000000032,2584,4.36,duration=* policy_id=* service=tcp/port:* proto=* src zone=Trust dst zone=Untrust action=Deny sent=* rcvd=* src=192.168.12.14 dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1744844920000000002,2452,0.00,duration=* policy_id=* service=* proto=* src zone=DMZ dst zone=Trust action=Deny sent=* rcvd=* src=* dst=192.168.32.10 src_port=* dst_port=* session_id=* reason=Traffic Denied
+1739990770000000029,2443,4.43,duration=* policy_id=* service=udp/port:* proto=* src zone=DMZ dst zone=Trust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1739990625000000016,2296,4.55,duration=* policy_id=* service=NETBIOS (*) proto=* src zone=Trust dst zone=DMZ action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1739990730000000027,2274,4.52,duration=* policy_id=* service=dns proto=* src zone=Untrust dst zone=Trust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745722801000000001,1890,0.00,duration=* policy_id=* service=icmp proto=* src zone=Trust dst zone=DMZ action=Deny sent=* rcvd=* src=192.168.1.20 dst=* icmp type=* icmp *=* session_id=* reason=Traffic Denied
+1739990835000000030,1425,4.38,duration=* policy_id=* service=* proto=* src zone=Untrust dst zone=Trust action=Deny sent=* rcvd=* src=* dst=192.168.32.18 src_port=* dst_port=* session_id=* reason=Traffic Denied
+1739990835000000031,1425,4.38,duration=* policy_id=* service=* proto=* src zone=Untrust dst zone=Trust action=Deny sent=* rcvd=* src=* dst=192.168.32.8 src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745775673000000001,1386,0.00,IKE * 189.115.47.130: Received a notification message for * NOTIFY_MSG_INVALID_SYNTAX.
+1745806236000000001,1296,4.54,duration=* policy_id=* service=udp/port:* proto=* src zone=DMZ dst zone=Untrust action=Deny sent=* rcvd=* src=192.168.64.7 dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745311038000000007,1134,4.54,duration=* policy_id=* service=http proto=* src zone=DMZ dst zone=Untrust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1742905313000000003,1081,4.42,duration=* policy_id=* service=Network Time proto=* src zone=DMZ dst zone=Untrust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745768434000000001,1070,0.00,IKE202.214.113.11 210.184.113.40 Phase *: Initiated negotiations * main mode.
+1744945202000000001,948,0.00,duration=* policy_id=* service=icmp proto=* src zone=Trust dst zone=DMZ action=Deny sent=* rcvd=* src=192.168.1.20 dst=* icmp type=* icmp code=* session_id=* reason=Traffic Denied
+1739991001000000036,920,5.82,duration=* policy_id=* service=* proto=* src zone=Trust dst zone=Untrust action=Permit sent=* rcvd=* src=* dst=* src_port=* dst_port=* src-xlated ip=202.214.113.11 port=* dst-xlated ip=* port=* session_id=* reason=Close - TCP FIN
+1745848331000000007,910,0.00,Session (id * src-ip 202.214.113.11 dst-ip * dst port *) route is valid.
+1745848331000000015,852,0.00,Session (id * src-ip * dst-ip * dst port *) route is valid.
+1739991322000000043,796,4.42,duration=* policy_id=* service=Network Time proto=* src zone=Trust dst zone=Untrust action=Deny sent=* rcvd=* src=192.168.4.78 dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745801507000000003,560,0.00,duration=* policy_id=* service=udp/port:* proto=* src zone=Trust dst zone=DMZ action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745830552000000002,540,0.00,duration=* policy_id=* service=udp/port:* proto=* src zone=Untrust dst zone=Trust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745864774000000010,484,0.00,IKE V2 *: Received a notification message for * NOTIFY_MSG_NON_FIRST_FRAGMENTS_ALSO.
+1739990765000000028,435,4.52,duration=* policy_id=* service=dns proto=* src zone=Trust dst zone=Untrust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745912423000000001,428,4.58,duration=* policy_id=* service=https proto=* src zone=DMZ dst zone=Untrust action=Deny sent=* rcvd=* src=192.168.64.7 dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745864768000000008,348,0.00,IKE * 1.179.228.242: Received a notification message for * NOTIFY_MSG_NON_FIRST_FRAGMENTS_ALSO.
+1745808822000000002,294,4.47,duration=* policy_id=* service=* proto=* src zone=Untrust dst zone=Trust action=Deny sent=* rcvd=* src=1.179.228.243 dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745778604000000007,286,0.00,IKE V2 *: Received a notification message for * NOTIFY_MSG_NON_FIRST_FRAGMENTS_ALSO.
+1745848331000000016,276,0.00,Session (id * src-ip * dst-ip 159.143.221.187 dst port *) route is valid.
+1745863866000000004,256,0.00,IKE * 124.43.18.36: Received a notification message for * NOTIFY_MSG_NON_FIRST_FRAGMENTS_ALSO.
+1745801579000000004,244,0.00,duration=* policy_id=* service=udp/port:* proto=* src zone=Trust dst zone=OpenVPN action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1744214373000000004,198,0.00,duration=* policy_id=* service=https proto=* src zone=OpenVPN dst zone=Trust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745778602000000005,182,0.00,IKE * 1.179.228.242: Received a notification message for * NOTIFY_MSG_NON_FIRST_FRAGMENTS_ALSO.
+1745863822000000002,168,0.00,IKE * 121.97.69.116: Received a notification message for * NOTIFY_MSG_NON_FIRST_FRAGMENTS_ALSO.
+1745370726000000001,144,0.00,duration=* policy_id=* service=https proto=* src zone=Trust dst zone=Untrust action=Permit sent=* rcvd=* src=* dst=* src_port=* dst_port=* src-xlated ip=202.214.113.11 port=* dst-xlated ip=* port=* session_id=* reason=Close - TCP *
+1745777698000000001,130,0.00,IKE * 124.43.18.36: Received a notification message for * NOTIFY_MSG_NON_FIRST_FRAGMENTS_ALSO.
+1743307172000000014,129,10.14,IKE 210.184.113.40 phase *:The symmetric crypto key has been generated successfully.
+1739992348000000008,117,9.52,"IKE 210.184.113.40 Phase * * ID *: Completed negotiations with SPI *, tunnel ID *, and lifetime * seconds/* KB."
+1739991727000000001,115,12.55,The system clock was updated from primary NTP server type 192.168.88.1 with an adjustment of * ms. Authentication was None. Update mode was Automatic
+1745864774000000011,113,0.00,"IKE 122.53.157.171 child sa with * CHILD SA: Completed negotiations with SPI *, tunnel ID *, and lifetime * seconds/* KB."
+1745299033000000006,106,0.00,duration=* policy_id=* service=* (tcp) proto=* src zone=OpenVPN dst zone=Trust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745825606000000005,97,8.67,IKE 210.184.113.40 Phase * * ID *: * to the peer'* first message.
+1745912496000000002,94,8.88,IKE * 189.115.47.130: Received a notification message for * NOTIFY_MSG_INVALID_SYNTAX.
+1745908825000000001,61,0.00,IKE * 189.115.47.130: Received a notification message for * NOTIFY_MSG_INVALID_SYNTAX.
+1745777700000000003,90,0.00,IKE * 121.97.69.116: Received a notification message for * NOTIFY_MSG_NON_FIRST_FRAGMENTS_ALSO.
+1745864704000000007,90,0.00,Rejected an IKE packet on ethernet0/* from *:* to 202.214.113.11:* with cookies * and * because an initial Phase * packet arrived from an * peer gateway.
+1745645077000000006,75,0.00,Rejected an IKE packet on ethernet0/* from *:* to *:* with cookies * and * because an initial Phase * packet arrived from an unrecognized peer gateway.
+1745778604000000008,76,0.00,"IKE 122.53.157.171 child sa with * CHILD SA: Completed negotiations with SPI *, tunnel ID *, and lifetime * seconds/* KB."
+1745802077000000001,72,0.00,duration=* policy_id=* service=udp/port:* proto=* src zone=DMZ dst zone=Untrust action=Deny sent=* rcvd=* src=* dst=* src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745863822000000003,72,0.00,"IKE 121.97.69.116 child sa with * CHILD SA: Completed negotiations with SPI *, tunnel ID *, and lifetime * seconds/* KB."
+1745863866000000005,72,0.00,"IKE 124.43.18.36 child sa with * CHILD SA: Completed negotiations with SPI *, tunnel ID *, and lifetime * seconds/* KB."
+1745864768000000009,72,0.00,"IKE 1.179.228.242 child sa with * CHILD SA: Completed negotiations with SPI *, tunnel ID *, and lifetime * seconds/* KB."
+1739996497000000002,68,7.41,IKE * IKESA : * IKESA negotiations with * CHILD SA.
+1742905391000000007,65,0.00,System clock * * been * by brastel_admins
+1745863306000000001,63,0.00,IKE 210.184.113.40: Received a notification message for * * * NOTIFY_NS_NHTB_INFORM.
+1740042698000000002,62,6.16,duration=* policy_id=* service=tcp/port:* proto=* src zone=Trust dst zone=DMZ action=Permit sent=* rcvd=* src=* dst=* src_port=* dst_port=* src-xlated ip=* port=* dst-xlated ip=* port=* session_id=* reason=Close - AGE OUT
+1745689222000000001,58,0.00,
+1739992784000000010,50,12.66,System clock * have been * by brastel_admins
+1743997256000000002,47,5.96,duration=* policy_id=* service=tcp/port:* proto=* src zone=Trust dst zone=DMZ action=Permit sent=* rcvd=* src=192.168.130.5 dst=* src_port=* dst_port=* src-xlated ip=192.168.130.5 port=* dst-xlated ip=* port=* session_id=* reason=Close - * *
+1745626106000000001,42,0.00,duration=* policy_id=* service=udp/port:* proto=* src zone=* dst zone=Untrust action=Deny sent=* rcvd=* src=* dst=192.168.140.88 src_port=* dst_port=* session_id=* reason=Traffic Denied
+1745818845000000001,40,0.00,IKE * 189.115.47.130: Received a notification message for * NOTIFY_MSG_INVALID_SYNTAX.
+1745822446000000001,40,0.00,IKE * 189.115.47.130: Received a notification message for * NOTIFY_MSG_INVALID_SYNTAX.
+1745826027000000001,40,0.00,IKE * 189.115.47.130: Received a notification message for * NOTIFY_MSG_INVALID_SYNTAX.
+1745848351000000017,40,0.00,Session (id * src-ip * dst-ip 38.90.226.63 dst port *) route is valid.
+1745777698000000002,38,0.00,"IKE 124.43.18.36 child sa with * CHILD SA: Completed negotiations with SPI *, tunnel ID *, and lifetime * seconds/* KB."

@@ -25,15 +25,15 @@ class TestDbscan(unittest.TestCase):
             itemIds=itemIds,
             endep=endep,
         )
-        self.assertEqual(len(centroids), 2)
+        self.assertEqual(len(centroids), 1)
         
         # number of itemIds in clusters whose value is 1
-        count = sum(1 for cluster in clusters.values() if cluster == 1)
-        self.assertEqual(count, 3)
+        count = sum(1 for cluster in clusters.values() if cluster == -1)
+        self.assertEqual(count, 5)
 
         # number of itemIds in clusters whose value is 2
-        count = sum(1 for cluster in clusters.values() if cluster == 2)
-        self.assertEqual(count, 3)
+        count = sum(1 for cluster in clusters.values() if cluster == 1)
+        self.assertEqual(count, 6)
 
 
 

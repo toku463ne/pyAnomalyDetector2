@@ -12,9 +12,9 @@
 ```sql
 CREATE DATABASE anomdec;
 CREATE DATABASE anomdec_test;
-CREATE USER anomdec_adm WITH ENCRYPTED PASSWORD 'anomdec_pass';
-GRANT ALL PRIVILEGES ON DATABASE anomdec TO anomdec_adm;
-GRANT ALL PRIVILEGES ON DATABASE anomdec_test TO anomdec_adm;
+CREATE USER anomdec WITH ENCRYPTED PASSWORD 'anomdec_pass';
+GRANT ALL PRIVILEGES ON DATABASE anomdec TO anomdec;
+GRANT ALL PRIVILEGES ON DATABASE anomdec_test TO anomdec;
 ```
   
 ## How to use  

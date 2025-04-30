@@ -14,10 +14,15 @@ class TestLoganGetter(unittest.TestCase):
         time.sleep(1)
         data_source = {
             'base_url': 'http://localhost:8000/',
-            'group_names': {
-                'hw/nw': {
-                    'host_names': ['sophos']
-                }
+            'groups': {
+                'proxy': {
+                    1: 'SOPHOS-01',
+                    2: 'pfsense67051_openvpn'
+                },
+                'firewall': {
+                    3: 'IMTFW001',
+                    4: 'NFPFW003',
+                },
             },
             'trends_interval': 3600 * 3,
             'minimal_group_size': 100

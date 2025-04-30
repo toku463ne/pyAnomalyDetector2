@@ -1,0 +1,23 @@
+groupId,count,score,text
+1740012874000000008,3258,0.00,AEAD Decrypt error: cipher final failed
+1745194775000000001,474,5.38,AEAD Decrypt error: bad packet ID (may be a replay): [ * ] -- see the man page entry for --no-replay and --replay-window for more info or silence this warning with --mute-replay-warnings
+1739991745000000001,402,5.78,user '*' authenticated
+1739991747000000003,390,5.52,NOTE: Beginning empirical MTU test -- results should be available in * to * minutes.
+1739991745000000002,368,5.68,[*] Peer Connection Initiated with [AF_INET]*:*
+1739992535000000005,310,6.05,"[*] Inactivity timeout (--ping-restart), restarting"
+1739991927000000004,301,5.71,"NOTE: Empirical MTU test completed [Tried,Actual] local->remote=[*,*] remote->local=[*,*]"
+1740002980000000001,187,5.74,"WARNING: 'cipher' is present in local config but missing in remote config, local='cipher AES-128-CBC'"
+1740009814000000001,45,0.00,NOTE: This connection is unable to accommodate a UDP packet size of 1521. Consider using --fragment or --mssfix options as a workaround.
+1745301433000000001,43,0.00,"WARNING: 'link-mtu' is used inconsistently, local='link-mtu *', remote='link-mtu *'"
+1745660807000000001,20,0.00,user 'christian' authenticated
+1745660807000000002,14,0.00,[christian] Peer Connection Initiated with [AF_INET]*:*
+1745675631000000001,14,0.00,"[christian] Inactivity timeout (--ping-restart), restarting"
+1745146210000000001,12,0.00,NOTE: failed to empirically measure MTU (requires OpenVPN * or higher at other end of connection).
+1745550310000000001,6,0.00,[christian] Peer Connection Initiated with [AF_INET]153.139.154.3:*
+1745215077000000002,4,0.00,TLS Error: TLS key negotiation failed to occur within * seconds (check your network connectivity)
+1745215077000000003,4,0.00,TLS Error: TLS * failed
+1745535609000000001,2,0.00,user 'tadashi' authenticated
+1745535609000000002,2,0.00,[tadashi] Peer Connection Initiated with [AF_INET]*:*
+1745545819000000001,2,0.00,user 'kawamoto' authenticated
+1745545819000000002,2,0.00,[kawamoto] Peer Connection Initiated with [AF_INET]*:*
+1745574498000000001,2,0.00,"[tadashi] Inactivity timeout (--ping-restart), restarting"

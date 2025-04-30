@@ -18,7 +18,7 @@ class TestConfigLoader(unittest.TestCase):
 
         admdb = conf["admdb"]
         self.assertEqual(admdb["host"], "localhost")
-        self.assertEqual(admdb["user"], "anomdec_adm")
+        self.assertEqual(admdb["user"], "anomdec")
         self.assertEqual(admdb["password"], "anomdec_pass")
         
 if __name__ == '__main__':

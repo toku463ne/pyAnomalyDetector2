@@ -11,7 +11,7 @@ class TestDetector(unittest.TestCase):
     def run_update_test(self, name, config, endep, itemIds, itemId_to_check):
         data_source = config['data_sources'][name]
         history_interval = config['history_interval']
-        history_retention = config['history_retention']
+        anomaly_keep_secs = config['anomaly_keep_secs']
 
         ms = ModelsSet(name)
         
@@ -25,7 +25,7 @@ class TestDetector(unittest.TestCase):
         min_clock = df["clock"].min()
         max_clock = df["clock"].max()
 
-        startep = endep - history_interval * history_retention
+        startep = endep - anomaly_keep_secs
         self.assertEqual(min_clock, startep - startep % history_interval) 
         self.assertEqual(max_clock, endep - endep % history_interval)
 

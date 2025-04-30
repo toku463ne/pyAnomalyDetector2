@@ -10,7 +10,6 @@ from models.history_updates import HistoryUpdatesModel
 
 def log(msg, level=logging.INFO):
     msg = f"[trends_stats.py] {msg}"
-    print(msg)
     logging.log(level, msg)
 
 def update_stats(conf: Dict, 

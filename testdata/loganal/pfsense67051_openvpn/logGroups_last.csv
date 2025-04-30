@@ -1,0 +1,23 @@
+groupId,lastUpdate,count,score,text
+1740012874000000008,2025-04-29 16:01:13,3258,0.000,Apr 29 16:01:13 192.168.67.51 openvpn[12781]: AEAD Decrypt error: cipher final failed
+1745194775000000001,2025-04-29 17:35:29,474,5.376,Apr 29 17:35:29 192.168.67.51 openvpn[12781]: lmukaromah/180.243.127.202:1194 AEAD Decrypt error: bad packet ID (may be a replay): [ #693624 ] -- see the man page entry for --no-replay and --replay-window for more info or silence this warning with --mute-replay-warnings
+1739991745000000001,2025-04-29 17:29:36,402,5.781,Apr 29 17:29:36 192.168.67.51 openvpn: user 'kawamoto' authenticated
+1739991747000000003,2025-04-29 17:29:39,390,5.523,Apr 29 17:29:39 192.168.67.51 openvpn[12781]: kawamoto/210.138.109.141:1194 NOTE: Beginning empirical MTU test -- results should be available in 3 to 4 minutes.
+1739991745000000002,2025-04-29 17:29:36,368,5.679,Apr 29 17:29:36 192.168.67.51 openvpn[12781]: 210.138.109.141:1194 [kawamoto] Peer Connection Initiated with [AF_INET]210.138.109.141:1194
+1739992535000000005,2025-04-29 17:02:43,310,6.047,"Apr 29 17:02:43 192.168.67.51 openvpn[12781]: salman/49.228.33.19:63431 [salman] Inactivity timeout (--ping-restart), restarting"
+1739991927000000004,2025-04-29 17:32:58,301,5.715,"Apr 29 17:32:58 192.168.67.51 openvpn[12781]: kawamoto/210.138.109.141:1194 NOTE: Empirical MTU test completed [Tried,Actual] local->remote=[1521,1521] remote->local=[1524,1524]"
+1740002980000000001,2025-04-29 16:50:13,187,5.743,"Apr 29 16:50:13 192.168.67.51 openvpn[12781]: 126.157.204.249:6985 WARNING: 'cipher' is present in local config but missing in remote config, local='cipher AES-128-CBC'"
+1740009814000000001,2025-04-29 16:12:37,45,0.000,Apr 29 16:12:37 192.168.67.51 openvpn[12781]: idamascena/177.84.210.62:1194 NOTE: This connection is unable to accommodate a UDP packet size of 1521. Consider using --fragment or --mssfix options as a workaround.
+1745301433000000001,2025-04-29 06:31:02,43,0.000,"Apr 29 06:31:02 192.168.67.51 openvpn[12781]: 175.176.66.103:47274 WARNING: 'link-mtu' is used inconsistently, local='link-mtu 1557', remote='link-mtu 1560'"
+1745660807000000001,2025-04-28 21:52:46,20,0.000,Apr 27 20:32:37 192.168.67.51 openvpn: user 'christian' authenticated
+1745660807000000002,2025-04-28 21:52:46,14,0.000,Apr 27 20:32:37 192.168.67.51 openvpn[12781]: 153.139.154.3:28448 [christian] Peer Connection Initiated with [AF_INET]153.139.154.3:28448
+1745675631000000001,2025-04-29 00:01:35,14,0.000,"Apr 27 21:47:22 192.168.67.51 openvpn[12781]: christian/153.139.154.3:28448 [christian] Inactivity timeout (--ping-restart), restarting"
+1745146210000000001,2025-04-29 13:57:09,12,0.000,Apr 29 13:57:09 192.168.67.51 openvpn[12781]: renato/125.30.95.83:1194 NOTE: failed to empirically measure MTU (requires OpenVPN 1.5 or higher at other end of connection).
+1745550310000000001,2025-04-28 08:58:12,6,0.000,Apr 28 08:58:12 192.168.67.51 openvpn[12781]: 153.139.154.3:14112 [christian] Peer Connection Initiated with [AF_INET]153.139.154.3:14112
+1745215077000000002,2025-04-28 18:07:07,4,0.000,Apr 28 18:07:07 192.168.67.51 openvpn[12781]: 103.176.252.28:1194 TLS Error: TLS key negotiation failed to occur within 60 seconds (check your network connectivity)
+1745215077000000003,2025-04-28 18:07:07,4,0.000,Apr 28 18:07:07 192.168.67.51 openvpn[12781]: 103.176.252.28:1194 TLS Error: TLS handshake failed
+1745535609000000001,2025-04-28 08:00:05,2,0.000,Apr 28 08:00:05 192.168.67.51 openvpn: user 'tadashi' authenticated
+1745535609000000002,2025-04-28 08:00:05,2,0.000,Apr 28 08:00:05 192.168.67.51 openvpn[12781]: 60.125.51.166:61354 [tadashi] Peer Connection Initiated with [AF_INET]60.125.51.166:61354
+1745545819000000001,2025-04-28 08:58:36,2,0.000,Apr 28 08:58:36 192.168.67.51 openvpn: user 'kawamoto' authenticated
+1745545819000000002,2025-04-28 08:58:36,2,0.000,Apr 28 08:58:36 192.168.67.51 openvpn[12781]: 160.13.85.62:1194 [kawamoto] Peer Connection Initiated with [AF_INET]160.13.85.62:1194
+1745574498000000001,2025-04-28 10:36:09,2,0.000,"Apr 28 10:36:09 192.168.67.51 openvpn[12781]: tadashi/60.125.51.166:61354 [tadashi] Inactivity timeout (--ping-restart), restarting"
