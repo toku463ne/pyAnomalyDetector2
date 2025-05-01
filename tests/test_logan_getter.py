@@ -24,7 +24,6 @@ class TestLoganGetter(unittest.TestCase):
                     4: 'NFPFW003',
                 },
             },
-            'trends_interval': 3600 * 3,
             'minimal_group_size': 100
         }
         logan_getter = LoganGetter(data_source)

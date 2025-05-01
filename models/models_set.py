@@ -1,5 +1,3 @@
-
-
 from models.history import HistoryModel
 from models.history_stats import HistoryStatsModel
 from models.history_updates import HistoryUpdatesModel
@@ -47,7 +45,6 @@ class ModelsSet:
                 m.drop()
             except Exception as e:
                 print(f"Error dropping model {m.__class__.__name__}: {e}")
-        
         
 
     def initialize(self):

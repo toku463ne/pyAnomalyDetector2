@@ -31,8 +31,8 @@ class LoganGetter(DataGetter):
         self.base_url = data_source_config['base_url']
         self.groups = data_source_config['groups']
         self.minimal_group_size = data_source_config.get('minimal_group_size', 1000)
-        self.data: Dict[str, pd.DataFrame] = {}
-        self.loggroup_data: Dict[str, pd.DataFrame] = {}
+        self.data: Dict[int, pd.DataFrame] = {}
+        self.loggroup_data: Dict[int, pd.DataFrame] = {}
         self.itemIds = []
         self.itemId_map = {}
         
@@ -59,7 +59,7 @@ class LoganGetter(DataGetter):
         return False
     
 
-    def _map_itemIds(self, hostId: int, itemIds: List[int]) -> List[str]:
+    def _map_itemIds(self, hostId: int, itemIds: List[int]) -> List[int]:
         # make itemid unique by combining hostid and itemid as a string
         itemId_map = {}
         new_itemIds = []
@@ -74,12 +74,12 @@ class LoganGetter(DataGetter):
 
     def _conv_itemIds(self, df: pd.DataFrame) -> pd.DataFrame:
         # convert itemid according to itemId_map
-        df['itemid'] = df['itemid'].map(self.itemId_map).fillna(df['itemid']).astype(str)
+        df['itemid'] = df['itemid'].map(self.itemId_map).fillna(df['itemid'])
 
         return df
 
 
-    def _load_host_data(self, hostid: str):
+    def _load_host_data(self, hostid: int):
         host_name = self.hosts[hostid]
         # get loggroups data
         url = self.base_url + '/' + host_name + '/logGroups.csv'
@@ -117,7 +117,7 @@ class LoganGetter(DataGetter):
 
         # filter by itemIds
         if len(df) > 0:
-            df = df[df['itemid'].astype(str).isin([str(i) for i in itemIds])]
+            df = df[df['itemid'].isin(itemIds)]
 
         self.data[hostid] = df
 
@@ -176,7 +176,7 @@ class LoganGetter(DataGetter):
             data = pd.concat([data, self.data[hostid]])
         # filter by itemIds
         if len(itemIds) > 0:
-            data = data[data['itemid'].astype(str).isin([str(i) for i in itemIds])]
+            data = data[data['itemid'].isin(itemIds)]
         # filter by time
         data = data[(data['clock'] >= startep) & (data['clock'] <= endep)]
         return data
@@ -189,6 +189,7 @@ class LoganGetter(DataGetter):
         data.columns = ['itemid', 'clock', 'value', 'count']
         return data
     
+    
     def get_trends_full_data(self, startep, endep, itemIds = []):
         data = self.get_history_data(startep, endep, itemIds)
         # sum values by trends_interval, use the first clock
@@ -196,7 +197,10 @@ class LoganGetter(DataGetter):
         data = data.groupby(['itemid', 'clock']).agg({'value': ['min', 'mean', 'max']}).reset_index()
         return data
     
-    def get_items_details(self, itemIds) -> pd.DataFrame:
+
+    def get_items_details(self, itemIds: List[int] = []) -> pd.DataFrame:
+        if len(self.data) == 0:
+            self._load_data()
         #loggroups_fields = ['itemid', 'count', 'score', 'text']
         #final df           ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
         data = pd.DataFrame(columns=['group_name', 'hostid', 'host_name', 'itemid', 'item_name'])
@@ -206,7 +210,8 @@ class LoganGetter(DataGetter):
                 loggrp['group_name'] = group_name
                 loggrp['hostid'] = hostid
                 loggrp['host_name'] = host_name
-                loggrp = loggrp[loggrp['itemid'].isin(itemIds)]
+                if len(itemIds) > 0:
+                    loggrp = loggrp[loggrp['itemid'].isin(itemIds)]
                 loggrp = loggrp[['group_name', 'hostid', 'host_name', 'itemid', 'text']]
                 loggrp.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
                 data = pd.concat([data, loggrp])
