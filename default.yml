@@ -73,7 +73,7 @@ batch_size: 100
 #  clustering default params
 ##################################################
 dbscan:
-  jaccaard_eps: 0.2
+  jaccard_eps: 0.2
   corr_eps: 0.4
   min_samples: 2
   detection_period: 43200

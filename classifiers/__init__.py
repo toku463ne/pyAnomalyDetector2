@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from itertools import combinations
+import logging
 
 def jaccard_distance(a: pd.Series, b: pd.Series) -> float:
     """Compute Jaccard distance between two binary pd.Series"""
@@ -49,6 +50,7 @@ def compute_jaccard_distance_matrix(charts: dict, charts_stats: dict,
 
         d_shape = jaccard_distance(a_i, a_j)
         dist_matrix[i, j] = dist_matrix[j, i] = d_shape
+        #logging.info(f"jaccard_distance {id_i} {id_j} : {d_shape}")
 
     return pd.DataFrame(dist_matrix, index=itemids, columns=itemids)
 
@@ -65,5 +67,6 @@ def compute_correlation_distance_matrix(charts: dict) -> pd.DataFrame:
 
         d_shape = correlation_distance(s_i, s_j)
         dist_matrix[i, j] = dist_matrix[j, i] = d_shape
+        #logging.info(f"correlation_distance {id_i} {id_j} : {d_shape}")
 
     return pd.DataFrame(dist_matrix, index=itemids, columns=itemids)
