@@ -67,7 +67,7 @@ class HistoryModel(Model):
         self.db.exec_sql(sql)
 
     def get_charts(self, itemIds: List[int], startep: int, endep: int) -> Dict[int, pd.Series]:
-        sql = f"SELECT itemid, clock, value FROM {self.table_name} WHERE itemid IN ({','.join(map(str, itemIds))}) AND clock >= {startep} AND clock <= {endep};"
+        sql = f"SELECT itemid, clock, value FROM {self.table_name} WHERE itemid IN ({','.join(map(str, itemIds))}) AND clock >= {startep} AND clock <= {endep} ORDER BY itemid, clock;"
         df = self.db.read_sql(sql)
         if df.empty:
             return {}
