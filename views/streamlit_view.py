@@ -57,7 +57,7 @@ class StreamlitView(View):
             rows=n_rows,
             cols=n_cols,
             subplot_titles=[
-                f"{itemId}<br>{properties[itemId]['host_name'][:20]}<br>{properties[itemId]['item_name'][:20]}"
+                f"{itemId}<br>{properties[int(itemId)]['host_name'][:20]}<br>{properties[int(itemId)]['item_name'][:20]}"
                 for itemId in itemIds
             ]
         )
