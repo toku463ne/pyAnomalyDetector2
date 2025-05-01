@@ -12,6 +12,7 @@ def update(conf: Dict) :
     view_sources = conf.get('view_sources', [])
     for view_source_name in view_sources:
         view_source = view_sources[view_source_name]
+        view_source["name"] = view_source_name
         if view_source["type"] not in target_views:
             continue
         ms = ModelsSet(view_source["data_source_name"])

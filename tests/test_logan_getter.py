@@ -35,32 +35,51 @@ class TestLoganGetter(unittest.TestCase):
         itemIds = logan_getter.get_itemIds()
         self.assertGreater(len(itemIds), 0)
 
-        # Fri Mar 21 03:00:00 JST 2025
-        start_time_epoch = int(time.mktime(time.strptime('Fri Mar 21 09:00:00 2025', '%a %b %d %H:%M:%S %Y')))
-        # maximum = Fri Mar 21 20:00:00 JST 2025
-        end_time_epoch = int(time.mktime(time.strptime('Fri Mar 21 20:00:00 2025', '%a %b %d %H:%M:%S %Y')))
+        endep = 1745913600
+        startep = endep - 3600 * 3 + 1
+        itemIds = ["11745883611000000001", "31739990643000000024", "41739990606000000004"]
         
+        # get history
+        history = logan_getter.get_history_data(startep, endep, itemIds)
+        self.assertIsNotNone(history)
+        self.assertGreater(len(history), 0)
 
-        history_data = logan_getter.get_history_data(start_time_epoch, end_time_epoch, itemIds)
-        self.assertGreater(len(history_data), 0)
-
-        history_data = logan_getter.get_history_data(start_time_epoch, end_time_epoch, itemIds=[1742496227000000001])
-        self.assertEqual(len(history_data), 12)
-
-
-        trends_data = logan_getter.get_trends_data(start_time_epoch, end_time_epoch, itemIds)
-        self.assertGreater(len(trends_data), 0) 
-
-        trends_data = logan_getter.get_trends_data(start_time_epoch, end_time_epoch, itemIds=[1742496227000000001])
-        self.assertEqual(len(trends_data), 1) 
+        got_itemIds = history['itemid'].unique()
+        self.assertEqual(len(got_itemIds), len(itemIds))
+        self.assertTrue(all(itemId in got_itemIds for itemId in itemIds))
+        for itemId in itemIds:
+            self.assertEqual(len(history[history["itemid"] == itemId]), 3)
 
 
-        trends_full_data = logan_getter.get_trends_full_data(start_time_epoch, end_time_epoch, itemIds)
-        self.assertGreater(len(trends_full_data), 0)
+        # get trends
+        startep = endep - 3600 * 24 * 3
+        
+        trends = logan_getter.get_trends_data(startep, endep, itemIds)
+        self.assertIsNotNone(trends)
+        self.assertGreater(len(trends), 0)
+        got_itemIds = trends['itemid'].unique()
+        self.assertEqual(len(got_itemIds), len(itemIds))
+        self.assertTrue(all(itemId in got_itemIds for itemId in itemIds))
+        for itemId in itemIds:
+            size = len(trends[trends["itemid"] == itemId])
+            self.assertGreater(size, 0)
+            self.assertLessEqual(size, 4)
 
-        trends_full_data = logan_getter.get_trends_full_data(start_time_epoch, end_time_epoch, itemIds=[1742496227000000001])
-        self.assertEqual(len(trends_full_data), 1)
+        trends_all = logan_getter.get_trends_full_data(startep, endep, itemIds)
+        for itemId in itemIds:
+            size = len(trends_all[trends_all["itemid"] == itemId])
+            self.assertGreater(size, 0)
+            self.assertLessEqual(size, 4)
 
+        details = logan_getter.get_items_details(itemIds)
+        self.assertIsNotNone(details)
+        self.assertEqual(len(details), 3)
+
+        row = details[details["itemid"] == itemIds[0]]
+        self.assertEqual(row["group_name"].values[0], "proxy")
+        self.assertEqual(row["hostid"].values[0], 1)
+        self.assertEqual(row["host_name"].values[0], "SOPHOS-01")
+        
         os.system('pkill -f http.server')
 
 

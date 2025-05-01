@@ -91,3 +91,4 @@ detect3_lambda_threshold2: 2.0
 ignore_diff_rate: 0.2 # ignore if the peaks are just less than this rate
 anomaly_valid_count_rate: 0.8 # valid anomaly if the count is more than this rate
 anomaly_keep_secs: 86400 # 1day  
+

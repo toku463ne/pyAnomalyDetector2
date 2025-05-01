@@ -3,10 +3,8 @@
 from models.history import HistoryModel
 from models.history_stats import HistoryStatsModel
 from models.history_updates import HistoryUpdatesModel
-
 from models.trends_stats import TrendsStatsModel
 from models.trends_updates import TrendsUpdatesModel
-
 from models.anomalies import AnomaliesModel
 from db.postgresql import PostgreSqlDB
 import utils.config_loader as config_loader
@@ -65,5 +63,3 @@ class ModelsSet:
                 print(f"Error checking connection for model {m.__class__.__name__}: {e}")
         return True
 
-
-    

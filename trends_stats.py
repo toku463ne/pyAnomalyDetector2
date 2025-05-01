@@ -31,6 +31,7 @@ def update_stats(conf: Dict,
     # update stats
     for data_source_name in data_sources:
         data_source = data_sources[data_source_name]
+        data_source["name"] = data_source_name
         log(f"processing data source: {data_source_name}")
         oldstartep: int = 0
         startep: int = 0

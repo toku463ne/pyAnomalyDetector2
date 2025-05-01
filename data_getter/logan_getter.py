@@ -144,14 +144,15 @@ class LoganGetter(DataGetter):
         # filter host_names by group_names
         group_names = group_names if len(group_names) > 0 else self.groups.keys()
 
+        itemIds2 = []
         if len(item_names) > 0:
             # filter loggroups_data['text'] by item_names regex
-            for host in host_names:
-                data = self.loggroup_data[host]
+            for hostid in self.hosts:
+                data = self.loggroup_data[hostid]
                 itemIds2.extend(data[data['text'].str.contains('|'.join(item_names))]['itemid'].tolist())
         else:
-            for host in host_names:
-                data = self.data[host]
+            for hostid in self.hosts:
+                data = self.data[hostid]
                 itemIds2.extend(data['itemid'].tolist())
 
         itemIds2 = list(set(itemIds2))
@@ -182,19 +183,20 @@ class LoganGetter(DataGetter):
     
     def get_trends_data(self, startep, endep, itemIds = []):
         data = self.get_history_data(startep, endep, itemIds)
-        # sum values by trends_interval, use the first clock
-        data['clock'] = data['clock'] // self.trends_interval
-        data = data.groupby(['itemid', 'clock']).mean().reset_index()
+        # sum values by trends_interval
+        data['clock'] -= data['clock'] % self.trends_interval
+        data = data.groupby(['itemid', 'clock']).agg(value=('value', 'mean'), count=('value', 'count')).reset_index()
+        data.columns = ['itemid', 'clock', 'value', 'count']
         return data
     
     def get_trends_full_data(self, startep, endep, itemIds = []):
         data = self.get_history_data(startep, endep, itemIds)
         # sum values by trends_interval, use the first clock
-        data['clock'] = data['clock'] // self.trends_interval
+        data['clock'] -= data['clock'] % self.trends_interval
         data = data.groupby(['itemid', 'clock']).agg({'value': ['min', 'mean', 'max']}).reset_index()
         return data
     
-    def get_items_details(self, itemIds):
+    def get_items_details(self, itemIds) -> pd.DataFrame:
         #loggroups_fields = ['itemid', 'count', 'score', 'text']
         #final df           ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
         data = pd.DataFrame(columns=['group_name', 'hostid', 'host_name', 'itemid', 'item_name'])

@@ -5,10 +5,9 @@ from typing import List, Dict, Tuple
 from abc import abstractmethod
 import pandas as pd # type: ignore
 
-
-
 class DataGetter:
     def __init__(self, data_source_config):
+        self.data_source_config = data_source_config
         self.init_data_source(data_source_config)
 
     # function to initialize the data source. 
