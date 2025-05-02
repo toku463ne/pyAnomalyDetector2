@@ -57,6 +57,7 @@ class LoganGetter(DataGetter):
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir)
         
+        self.itemid_hostid_map = {}
         self._load_loggroups_data()
         
 
@@ -97,6 +98,10 @@ class LoganGetter(DataGetter):
         host_name = self.hosts[hostid]
         return f"{self.data_dir}/{host_name}_loggroups.csv"
     
+    def _get_loggroups_lastdata_path(self, hostid: int) -> str:
+        host_name = self.hosts[hostid]
+        return f"{self.data_dir}/{host_name}_loggroups_last.csv"
+    
     def _load_loggroups_data(self):
         for hostid in self.hosts:
             data_path = self._get_loggroups_data_path(hostid)
@@ -106,6 +111,10 @@ class LoganGetter(DataGetter):
                 self._map_itemIds(hostid, df['itemid'].tolist())
                 df = self._conv_itemIds(df)
                 self.loggroup_data[hostid] = df
+                itemIds = df['itemid'].tolist()
+                itemIds = list(set(itemIds))
+                for itemId in itemIds:
+                    self.itemid_hostid_map[itemId] = hostid
                 
 
 
@@ -124,6 +133,15 @@ class LoganGetter(DataGetter):
         # filter by minimal_group_size
         if len(df) > 0:
             df = df[df['count'] >= self.minimal_group_size]
+
+        url = self.base_url + '/' + host_name + '/logGroups_last.csv'
+        response = requests.get(url, headers=self.headers)
+        if response.status_code == 200:
+            df_last = pd.read_csv(url)
+            df_last.columns = self.loggroups_fields
+            # save to file
+            df_last.to_csv(self._get_loggroups_lastdata_path(hostid), index=False)
+        
 
         # get itemids
         itemIds = df['itemid'].tolist()
@@ -244,3 +262,35 @@ class LoganGetter(DataGetter):
                 loggrp.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
                 data = pd.concat([data, loggrp])
         return data
+    
+
+    def get_item_detail(self, itemId: int) -> Dict:
+        data ={}
+        hostid = self.itemid_hostid_map[itemId]
+        loggroups_data_path = self._get_loggroups_data_path(hostid)
+        if os.path.exists(loggroups_data_path):
+            df = pd.read_csv(loggroups_data_path)
+            df.columns = self.loggroups_fields
+            df = self._conv_itemIds(df)
+            data['loggroups'] = df[df['itemid'] == itemId].to_dict(orient='records')
+        else:
+            data['loggroups'] = pd.DataFrame(columns=self.loggroups_fields)
+
+        loggroups_last_data_path = self._get_loggroups_lastdata_path(hostid)
+        if os.path.exists(loggroups_last_data_path):
+            df = pd.read_csv(loggroups_last_data_path)
+            df.columns = ["groupId","lastUpdate","count","score","text"]
+            df = self._conv_itemIds(df)
+            data['loggroups_last'] = df[df['itemid'] == itemId].to_dict(orient='records')
+        else:
+            data['loggroups_last'] = pd.DataFrame(columns=self.loggroups_fields)
+
+        return data
+    
+    def get_item_html_title(self, itemId: int) -> str:
+        data = self.get_items_details([itemId]).iloc[0]
+        return f"""<a href='/?page=details&itemid={itemId}' target='_self' style='font-size:12px;'>
+            {itemId}<br>
+            {data.host_name[:20]}<br>
+            {data.item_name[:20]}<br>
+        </a>"""

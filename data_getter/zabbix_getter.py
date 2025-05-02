@@ -16,6 +16,7 @@ class ZabbixGetter(DataGetter):
 
     def init_data_source(self, data_source: Dict):
         self.db = PostgreSqlDB(data_source)
+        self.api_url = data_source['api_url']
 
     def check_conn(self) -> bool:
         cur = self.db.exec_sql("SELECT version();")
@@ -332,3 +333,10 @@ class ZabbixGetter(DataGetter):
                 group_map[row[0]] = group_name
 
         return group_map
+    
+    def get_item_html_title(self, itemId: int) -> str:
+        # link to zabbix chart 
+        # http://{{ api_url }}/history.php?itemids%5B0%5D={{ itemid }}&period=now-30d&action=showgraph
+
+        return f"""<a href="http://{self.api_url}/zabbix/history.php?itemids%5B0%5D={itemId}&period=now-30d&action=showgraph" target="_blank">
+        {itemId}</a>"""

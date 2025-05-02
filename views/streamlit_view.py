@@ -47,7 +47,7 @@ class StreamlitView(View):
         self.chart_type = layout.get("chart_type", "line")
         self.data_sources = data_sources
 
-    def _generate_charts_in_group(self, df: pd.DataFrame, properties: Dict) -> go.Figure:
+    def _generate_charts_in_group(self, df: pd.DataFrame, properties: Dict, titles: Dict) -> go.Figure:
         itemIds = df['itemid'].unique()
         n_items = len(itemIds)
         n_cols = min(self.max_horizontal_charts, n_items)
@@ -57,7 +57,9 @@ class StreamlitView(View):
             rows=n_rows,
             cols=n_cols,
             subplot_titles=[
-            f"{itemId}<br>{properties[int(itemId)]['host_name'][:20]}<br>{properties[int(itemId)]['item_name'][:20]}"
+            titles.get(itemId, f"""{itemId}<br>
+                    {properties[int(itemId)]['host_name'][:20]}<br>
+                    {properties[int(itemId)]['item_name'][:20]}<br>""")
             for itemId in itemIds
             ]
         )
@@ -174,6 +176,7 @@ class StreamlitView(View):
             raise ValueError(f"Unsupported categoryid: {categoryid}")
 
         charts = {}
+        titles = {}
         for data_source_name, data_source in self.data_sources.items():
             ms = ModelsSet(data_source_name)
             if len(self.itemIds) > 0:
@@ -207,10 +210,15 @@ class StreamlitView(View):
                 t_df = dg.get_trends_data(trend_start, history_start, itemIds_block)
                 h_df = dg.get_history_data(history_start, history_end, itemIds_block)
                 df = pd.concat([t_df, h_df])
+                titles_block = {}
+                for itemId in itemIds_block:
+                    titles_block[itemId] = dg.get_item_html_title(itemId)
                 if group_name in charts:
                     charts[group_name] = pd.concat([charts[group_name], df])
+                    titles_block.update(titles[group_name])
                 else:
                     charts[group_name] = df
+                    titles[group_name] = titles_block
 
         charts_fig = {}
         for group_name in charts:
@@ -220,7 +228,7 @@ class StreamlitView(View):
                 sub_group_name = f"{group_name}_{round}"
                 itemIds_block = itemIds[i:i + self.max_charts]
                 df_block = charts[group_name][charts[group_name]['itemid'].isin(itemIds_block)]
-                charts_fig[sub_group_name] = self._generate_charts_in_group(df_block, properties)
+                charts_fig[sub_group_name] = self._generate_charts_in_group(df_block, properties, titles[group_name])
                 round += 1
         return charts_fig
 
@@ -273,10 +281,9 @@ class StreamlitView(View):
             return
 
         # Show item properties
-        st.subheader("Item Properties")
-        prop_keys = ["itemid", "host_name", "item_name", "group_name", "clusterid", "created", "trend_mean", "trend_std"]
-        item_props = data[prop_keys].iloc[0].to_dict()
-        st.json(item_props)
+        dg = data_getter.get_data_getter(data_source)
+        st.subheader("Item Details")
+        st.json(dg.get_item_detail(itemid))
 
         # Get time ranges
         endep = data["created"].max()
@@ -285,7 +292,6 @@ class StreamlitView(View):
         history_end = endep
 
         # Get time series data
-        dg = data_getter.get_data_getter(data_source)
         t_df = dg.get_trends_data(trend_start, history_start, [itemid])
         h_df = dg.get_history_data(history_start, history_end, [itemid])
         df = pd.concat([t_df, h_df])
@@ -304,6 +310,8 @@ class StreamlitView(View):
                 name="value"
             )
         )
+        # Get item properties for the current itemid
+        item_props = data.loc[data['itemid'] == itemid].iloc[0]
         mean = item_props['trend_mean']
         std = item_props['trend_std']
         plus_3sigma = mean + self.detect1_lambda_threshold * std

@@ -53,3 +53,26 @@ class DataGetter:
     def classify_by_groups(self, itemIds: List[int], group_names: List[str]) -> dict:
         return {}
         
+
+    def get_item_detail(self, itemId: int) -> Dict:
+        data = self.get_items_details([itemId])
+        if data.empty:
+            return {}
+        data = data.iloc[0]
+        return {
+            "itemid": data["itemid"],
+            "group_name": data["group_name"],
+            "hostid": data["hostid"],
+            "host_name": data["host_name"],
+            "item_name": data["item_name"]
+        }
+    
+    def get_item_html_title(self, itemId: int) -> str:
+        data = self.get_items_details([itemId])
+        if data.empty:
+            return ""
+        data = data.iloc[0]
+        return f"""{itemId}<br>
+                    {data[int(itemId)]['host_name'][:20]}<br>
+                    {data[int(itemId)]['item_name'][:20]}
+    """

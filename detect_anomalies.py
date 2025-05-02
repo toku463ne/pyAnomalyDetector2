@@ -158,4 +158,4 @@ if __name__ == "__main__":
         itemIds=args.itemids,
         skip_history_update=args.skip_history_update,
     )
-    classify_charts()
+    classify_charts(args.end)
