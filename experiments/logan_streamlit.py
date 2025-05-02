@@ -1,14 +1,17 @@
 import os, time
-
 import __init__
-from data_getter.logan_getter import LoganGetter
-from models.models_set import ModelsSet
 import utils.config_loader as config_loader
-import trends_stats
+from views.streamlit_view import StreamlitView
+
+# streamlit run /home/ubuntu/git/pyAnomalyDetector2/experiments/logan_streamlit.py
+
+conf = config_loader.conf
 
 name = 'test_logan'
 data_source = {
-    'base_url': 'http://localhost:8100/',
+    'base_url': 'http://localhost:8101/',
+    'data_dir': '/tmp/anomdec_test',
+    'name': name,
     'type': 'logan',
     'groups': {
         'proxy': {
@@ -20,32 +23,31 @@ data_source = {
             4: 'NFPFW003',
         },
     },
-    'minimal_group_size': 10000
+    'minimal_group_size': 1000
 }
-config_loader.conf['data_sources'] = {}
-config_loader.conf['data_sources'][name] = data_source
-
-os.system('cd testdata/loganal && python3 -m http.server 8100 &')
+os.system('cd testdata/loganal && python3 -m http.server 8101 &')
 time.sleep(1)
 
-logan_getter = LoganGetter(data_source)
-details = logan_getter.get_items_details()
 
+conf['data_sources'] = {}
+conf['data_sources'][name] = data_source
 
-ms = ModelsSet(name)
-ms.initialize()
-endep = 1745913600
-trends_stats.update_stats(config_loader.conf, endep, initialize=True)
+view_source ={
+    "type": "streamlit",
+    "port": 5200,
+    "chart_categories": {
+        "bycluster": {
+            "name": "By Cluster",
+            "one_item_per_host": False
+        }
+    },
+    "layout": {
+        "chart_width": 400,
+        "chart_height": 300,
+        "max_vertical_charts": 4,
+        "max_horizontal_charts": 3
+    } 
+}
 
-ts = ms.trends_stats.read_stats()
-
-# merge ts and details
-ts = details.merge(ts, on='itemid', how='left')
-
-print(ts)
-
-# ["itemid", "created", "group_name", "hostid", "clusterid", "host_name", "item_name", "trend_mean", "trend_std"]
-
-
-
-
+v = StreamlitView(conf, view_source, data_sources=conf["data_sources"])
+v.run()

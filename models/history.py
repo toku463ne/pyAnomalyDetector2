@@ -20,6 +20,7 @@ class HistoryModel(Model):
             where.append(f"clock <= {endep}")
         if len(where) > 0:
             sql += " WHERE " + " AND ".join(where)
+        sql += " ORDER BY itemid, clock;"
         
         df = self.db.read_sql(sql)
         if df.empty:

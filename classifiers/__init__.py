@@ -67,6 +67,6 @@ def compute_correlation_distance_matrix(charts: dict) -> pd.DataFrame:
 
         d_shape = correlation_distance(s_i, s_j)
         dist_matrix[i, j] = dist_matrix[j, i] = d_shape
-        #logging.info(f"correlation_distance {id_i} {id_j} : {d_shape}")
+        logging.info(f"correlation_distance {id_i} {id_j} : {d_shape}")
 
     return pd.DataFrame(dist_matrix, index=itemids, columns=itemids)

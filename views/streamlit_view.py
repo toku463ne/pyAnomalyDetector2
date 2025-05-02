@@ -57,10 +57,11 @@ class StreamlitView(View):
             rows=n_rows,
             cols=n_cols,
             subplot_titles=[
-                f"{itemId}<br>{properties[int(itemId)]['host_name'][:20]}<br>{properties[int(itemId)]['item_name'][:20]}"
-                for itemId in itemIds
+            f"{itemId}<br>{properties[int(itemId)]['host_name'][:20]}<br>{properties[int(itemId)]['item_name'][:20]}"
+            for itemId in itemIds
             ]
         )
+
 
         fig.update_layout(
             hovermode="x unified",
@@ -76,14 +77,16 @@ class StreamlitView(View):
                 )
 
         for i, itemId in enumerate(itemIds):
-            item_df = df[df['itemid'] == itemId]
-            item_df['clock'] = pd.to_datetime(item_df['clock'], unit='s').dt.strftime("%m-%d %H")
+            item_df = df[df['itemid'] == itemId].copy()
+            # sort by clock (ensure ascending order)
+            item_df = item_df.sort_values(by='clock')
+            # convert clock to datetime (keep as datetime, don't format as string)
+            item_df['clock'] = pd.to_datetime(item_df['clock'], unit='s')
             row = (i // n_cols) + 1
             col = (i % n_cols) + 1
 
             # Decide number of digits based on data range
             y_values = item_df['value']
-                      
             digits = utils.get_float_format(y_values, 4)
             fig.add_trace(
                 go.Scatter(
@@ -228,11 +231,7 @@ class StreamlitView(View):
         return self._generate_charts_by_category(CAT_BY_CLUSTER)
 
 
-
-    def run(self) -> None:
-        # Add a unique key to force Streamlit to reload the component on browser reload
-        #st.query_params(reload_key=str(os.urandom(16)))
-        #st.set_page_config(layout="wide")        
+    def run_root(self) -> None:
         st.title("Anomaly Detector Charts")
 
         categoryid = st.radio(
@@ -256,3 +255,112 @@ class StreamlitView(View):
         else:
             st.warning(f"Category '{categoryid}' is not supported in Streamlit view.")
 
+
+    def show_details(self, itemid: int) -> None:
+        st.title(f"Details for Item ID: {itemid}")
+
+        # Find the data source containing this itemid
+        found = False
+        for data_source_name, data_source in self.data_sources.items():
+            ms = ModelsSet(data_source_name)
+            data = ms.anomalies.get_data([f"itemid = {itemid}"])
+            if not data.empty:
+                found = True
+                break
+
+        if not found:
+            st.error(f"No data found for itemid {itemid}")
+            return
+
+        # Show item properties
+        st.subheader("Item Properties")
+        prop_keys = ["itemid", "host_name", "item_name", "group_name", "clusterid", "created", "trend_mean", "trend_std"]
+        item_props = data[prop_keys].iloc[0].to_dict()
+        st.json(item_props)
+
+        # Get time ranges
+        endep = data["created"].max()
+        trend_start = endep - self.trends_retention * self.trends_interval
+        history_start = endep - self.history_retention * self.history_interval
+        history_end = endep
+
+        # Get time series data
+        dg = data_getter.get_data_getter(data_source)
+        t_df = dg.get_trends_data(trend_start, history_start, [itemid])
+        h_df = dg.get_history_data(history_start, history_end, [itemid])
+        df = pd.concat([t_df, h_df])
+        df = df.sort_values(by='clock')
+        df['clock'] = pd.to_datetime(df['clock'], unit='s')
+
+        # Plot chart
+        st.subheader("Time Series Chart")
+        digits = utils.get_float_format(df['value'], 4)
+        fig = go.Figure()
+        fig.add_trace(
+            go.Scatter(
+                x=df['clock'],
+                y=df['value'].apply(lambda x: float(f"{x:.{digits}g}")),
+                mode="lines",
+                name="value"
+            )
+        )
+        mean = item_props['trend_mean']
+        std = item_props['trend_std']
+        plus_3sigma = mean + self.detect1_lambda_threshold * std
+        minus_3sigma = mean - self.detect1_lambda_threshold * std
+        x_vals = df['clock']
+
+        fig.add_trace(
+            go.Scatter(
+                x=x_vals,
+                y=[mean] * len(x_vals),
+                mode="lines",
+                line=dict(dash='dot', color='green'),
+                name="mean"
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=x_vals,
+                y=[plus_3sigma] * len(x_vals),
+                mode="lines",
+                line=dict(dash='dash', color='red'),
+                name="+3σ"
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=x_vals,
+                y=[minus_3sigma] * len(x_vals),
+                mode="lines",
+                line=dict(dash='dash', color='blue'),
+                name="-3σ"
+            )
+        )
+        fig.update_layout(
+            hovermode="x unified",
+            height=500,
+            width=900,
+            margin=dict(l=20, r=20, t=70, b=20),
+            showlegend=True,
+        )
+        st.plotly_chart(fig, use_container_width=True, key=f"details_plotly_chart_{itemid}")
+
+
+
+    def run(self) -> None:
+        query_params = st.query_params
+        print(f"Query Params: {query_params}")
+ 
+        # http://localhost:8501/?page=details&itemid=1174353226900002
+        page = query_params.get("page", "")
+       
+        if page == "details":
+            itemid = int(query_params.get("itemid", 0))
+            if itemid > 0:
+                self.show_details(itemid)
+            else:
+                st.error("Invalid itemid")
+        else:
+            self.run_root()
+        

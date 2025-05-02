@@ -16,18 +16,19 @@ example:
 """
 from typing import Dict, List
 import requests
-import json
+import os
 import pandas as pd
 
 from data_getter.data_getter import DataGetter
 import utils.config_loader as config_loader
+from models.models_set import ModelsSet
 
 class LoganGetter(DataGetter):
     fields = ['itemid', 'clock', 'value']
     loggroups_fields = ['itemid', 'count', 'score', 'text']
 
     def init_data_source(self, data_source_config):
-        config = config_loader.conf
+        self.data_source_name = data_source_config['name']
         self.base_url = data_source_config['base_url']
         self.groups = data_source_config['groups']
         self.minimal_group_size = data_source_config.get('minimal_group_size', 1000)
@@ -35,19 +36,29 @@ class LoganGetter(DataGetter):
         self.loggroup_data: Dict[int, pd.DataFrame] = {}
         self.itemIds = []
         self.itemId_map = {}
+        self.ms = ModelsSet(self.data_source_name)
+        self.endep = self.ms.history_updates.get_endep()
+        self.trends_interval = config_loader.conf['trends_interval']
+        self.trends_retention = config_loader.conf['trends_retention']
+        self.startep = self.endep - self.trends_interval * self.trends_retention
         
         self.hosts = {}
         for g in self.groups.values():
             for hostid, host in g.items():
                 self.hosts[hostid] = host
         
-        self.data_loaded = False
-        self.trends_interval = config['trends_interval']
         self.headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
 
+        self.data_dir = data_source_config['data_dir']
+        # ensure data_dir exists
+        if not os.path.exists(self.data_dir):
+            os.makedirs(self.data_dir)
+        
+        self._load_loggroups_data()
+        
 
     def check_conn(self) -> bool:
         try:
@@ -59,12 +70,16 @@ class LoganGetter(DataGetter):
         return False
     
 
+    def initialize(self):
+        self.ms.initialize()
+    
+
     def _map_itemIds(self, hostId: int, itemIds: List[int]) -> List[int]:
         # make itemid unique by combining hostid and itemid as a string
         itemId_map = {}
         new_itemIds = []
         for itemId in itemIds:
-            new_itemId = f"{hostId}{itemId}"
+            new_itemId = int(f"{hostId}{itemId}")
             itemId_map[itemId] = new_itemId
             new_itemIds.append(new_itemId)
 
@@ -77,9 +92,24 @@ class LoganGetter(DataGetter):
         df['itemid'] = df['itemid'].map(self.itemId_map).fillna(df['itemid'])
 
         return df
+    
+    def _get_loggroups_data_path(self, hostid: int) -> str:
+        host_name = self.hosts[hostid]
+        return f"{self.data_dir}/{host_name}_loggroups.csv"
+    
+    def _load_loggroups_data(self):
+        for hostid in self.hosts:
+            data_path = self._get_loggroups_data_path(hostid)
+            if os.path.exists(data_path):
+                df = pd.read_csv(data_path)
+                df.columns = self.loggroups_fields
+                self._map_itemIds(hostid, df['itemid'].tolist())
+                df = self._conv_itemIds(df)
+                self.loggroup_data[hostid] = df
+                
 
 
-    def _load_host_data(self, hostid: int):
+    def _import_host_data(self, hostid: int):
         host_name = self.hosts[hostid]
         # get loggroups data
         url = self.base_url + '/' + host_name + '/logGroups.csv'
@@ -87,6 +117,8 @@ class LoganGetter(DataGetter):
         if response.status_code == 200:
             df = pd.read_csv(url)
             df.columns = self.loggroups_fields
+            # save to file
+            df.to_csv(self._get_loggroups_data_path(hostid), index=False)
         else:
             df = pd.DataFrame(columns=self.loggroups_fields)
         # filter by minimal_group_size
@@ -113,31 +145,33 @@ class LoganGetter(DataGetter):
         else:
             df = pd.DataFrame(columns=self.fields)
 
+        itemIds = df['itemid'].tolist()
+        itemIds = list(set(itemIds))
+        itemIds = self._map_itemIds(hostid, itemIds)
         df = self._conv_itemIds(df)
 
-        # filter by itemIds
-        if len(df) > 0:
-            df = df[df['itemid'].isin(itemIds)]
+        self.ms.history.upsert(df['itemid'].tolist(), df['clock'].tolist(), df['value'].tolist())
+        self.endep = max(self.endep, df['clock'].max())
+        self.startep = self.endep - self.trends_interval * self.trends_retention
+        self.ms.history.remove_old_data(self.startep)
+        
 
-        self.data[hostid] = df
-
-
-    def _load_data(self, force: bool = False):
-        if not force and self.data_loaded:
-            return
-
+    def import_data(self):
         self.data = {}
         for hostid in self.hosts:
-            self._load_host_data(hostid)
-        self.data_loaded = True
+            self._import_host_data(hostid)
+        self.ms.history_updates.upsert_updates(self.startep, self.endep)
+
+    
 
     def get_itemIds(self, item_names: List[str] = [],
                     host_names: List[str] = [], 
                     itemIds: List[int] = [],
                     group_names: List[str] = [],
                     max_itemIds=0) -> List[int]:
-        if len(self.data) == 0:
-            self._load_data()
+        if len(self.loggroup_data) == 0:
+            self.import_data()
+
         itemIds = itemIds if len(itemIds) > 0 else self.itemIds
         # filter by host_names
         host_names = host_names if len(host_names) > 0 else self.hosts.values()
@@ -152,7 +186,7 @@ class LoganGetter(DataGetter):
                 itemIds2.extend(data[data['text'].str.contains('|'.join(item_names))]['itemid'].tolist())
         else:
             for hostid in self.hosts:
-                data = self.data[hostid]
+                data = self.loggroup_data[hostid]
                 itemIds2.extend(data['itemid'].tolist())
 
         itemIds2 = list(set(itemIds2))
@@ -167,20 +201,14 @@ class LoganGetter(DataGetter):
             itemIds = itemIds[:max_itemIds]
 
         return itemIds
+
+
+    def get_history_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
+        if endep > self.endep:
+            self.import_data()
+        return self.ms.history.get_data(itemIds, startep, endep)
     
-    def get_history_data(self, startep, endep, itemIds = []):
-        if len(self.data) == 0:
-            self._load_data()
-        data = pd.DataFrame(columns=self.fields)
-        for hostid in self.hosts:
-            data = pd.concat([data, self.data[hostid]])
-        # filter by itemIds
-        if len(itemIds) > 0:
-            data = data[data['itemid'].isin(itemIds)]
-        # filter by time
-        data = data[(data['clock'] >= startep) & (data['clock'] <= endep)]
-        return data
-    
+
     def get_trends_data(self, startep, endep, itemIds = []):
         data = self.get_history_data(startep, endep, itemIds)
         # sum values by trends_interval
@@ -199,8 +227,8 @@ class LoganGetter(DataGetter):
     
 
     def get_items_details(self, itemIds: List[int] = []) -> pd.DataFrame:
-        if len(self.data) == 0:
-            self._load_data()
+        if len(self.loggroup_data) == 0:
+            self.import_data()
         #loggroups_fields = ['itemid', 'count', 'score', 'text']
         #final df           ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
         data = pd.DataFrame(columns=['group_name', 'hostid', 'host_name', 'itemid', 'item_name'])

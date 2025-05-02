@@ -169,6 +169,31 @@ class CsvGetter(DataGetter):
                     continue
                 items[itemId] = int(row['hostid'])
         return items
+    
+
+    def get_group_map(self, itemIds: List[int], group_names: List[str]) -> Dict[int, str]:
+        if len(itemIds) == 0:
+            return {}
+        
+        if len(group_names) == 0:
+            return {}
+
+        df = pd.read_csv(os.path.join(self.data_dir, self.items_filename), compression='gzip')
+        #group_name,hostid,host_name,itemid,item_name
+        df.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
+
+        group_map = {}
+        for row in df.itertuples():
+            itemId = int(row.itemid)
+            if itemId not in itemIds:
+                continue
+            group_name = row.group_name
+            if group_name not in group_names:
+                continue
+            group_map[itemId] = group_name
+
+        return group_map
+
 
     
     # funtion to classify items by host groups

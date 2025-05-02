@@ -59,13 +59,15 @@ class AnomaliesModel(Model):
     def insert_data(self, data: pd.DataFrame):
         for _, row in data.iterrows():
             item_name = row.item_name.replace("'", "")
+            trend_mean = 0 if pd.isna(row.trend_mean) else row.trend_mean
+            trend_std = 0 if pd.isna(row.trend_std) else row.trend_std
             sql = f"""INSERT INTO {self.table_name} 
     (itemid, created, hostid, clusterid, group_name, host_name, item_name, trend_mean, trend_std) 
     VALUES 
     ({row.itemid}, {row.created}, 
      {row.hostid}, {row.clusterid}, 
-     '{row.group_name}', '{row.host_name}', '{item_name}', {row.trend_mean}, 
-     {row.trend_std})
+     '{row.group_name[:255]}', '{row.host_name[:255]}', '{item_name[:255]}', {trend_mean}, 
+     {trend_std})
     ON CONFLICT (itemid, created, group_name) DO UPDATE SET
         hostid = EXCLUDED.hostid,
         clusterid = EXCLUDED.clusterid,
@@ -120,3 +122,5 @@ class AnomaliesModel(Model):
         if len(itemIds) > 0:
             df = df[df.itemid.isin(itemIds)]
         self.insert_data(df)
+
+    
