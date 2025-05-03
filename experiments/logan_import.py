@@ -5,6 +5,7 @@ from data_getter.logan_getter import LoganGetter
 from models.models_set import ModelsSet
 import utils.config_loader as config_loader
 import trends_stats
+import detect_anomalies
 
 conf = config_loader.conf
 
@@ -58,6 +59,8 @@ df["created"] = endep
 df.columns = ["itemid", "group_name", "hostid", "host_name", "item_name", "trend_mean", "trend_std", "clusterid", "created"]
 
 ms.anomalies.insert_data(df)
+
+detect_anomalies.classify_charts(endep)
 
 
 

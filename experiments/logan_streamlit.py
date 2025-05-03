@@ -35,9 +35,14 @@ conf['data_sources'][name] = data_source
 view_source ={
     "type": "streamlit",
     "port": 5200,
+    "n_sigma": 2,
     "chart_categories": {
         "bycluster": {
             "name": "By Cluster",
+            "one_item_per_host": False
+        },
+        "bygroup": {
+            "name": "By Group",
             "one_item_per_host": False
         }
     },

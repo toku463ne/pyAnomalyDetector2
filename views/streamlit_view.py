@@ -37,6 +37,7 @@ class StreamlitView(View):
         self.tmp_dir = view_source.get("tmp_dir", "tmp")
         if not os.path.exists(self.tmp_dir):
             os.makedirs(self.tmp_dir)
+        self.n_sigma = view_source.get("n_sigma", 3)
         
         layout = view_source["layout"]
         self.max_vertical_charts = layout.get("max_vertical_charts", 5)
@@ -105,31 +106,31 @@ class StreamlitView(View):
             std = properties[itemId]['trend_std']
 
             # Add +3σ and -3σ lines if within y range
-            plus_3sigma = mean + self.detect1_lambda_threshold * std
-            minus_3sigma = mean - self.detect1_lambda_threshold * std
+            plus_n_sigma = mean + self.n_sigma * std
+            minus_n_sigma = mean - self.n_sigma * std
             y_min, y_max = y_values.min(), y_values.max()
             x_vals = item_df['clock']
 
-            if y_min - std <= plus_3sigma <= y_max + std:
+            if y_min - std <= plus_n_sigma <= y_max + std:
                 fig.add_trace(
                     go.Scatter(
                         x=x_vals,
-                        y=[plus_3sigma] * len(x_vals),
+                        y=[plus_n_sigma] * len(x_vals),
                         mode="lines",
                         line=dict(dash='dash', color='red'),
-                        name="+3σ"
+                        name=f"+{self.n_sigma}σ"
                     ),
                     row=row,
                     col=col
                 )
-            if y_min - std <= minus_3sigma <= y_max + std:
+            if y_min - std <= minus_n_sigma <= y_max + std:
                 fig.add_trace(
                     go.Scatter(
                         x=x_vals,
-                        y=[minus_3sigma] * len(x_vals),
+                        y=[minus_n_sigma] * len(x_vals),
                         mode="lines",
                         line=dict(dash='dash', color='blue'),
-                        name="-3σ"
+                        name=f"-{self.n_sigma}σ"
                     ),
                     row=row,
                     col=col
@@ -152,7 +153,7 @@ class StreamlitView(View):
             height=max(self.chart_height * n_rows + 100, 500),
             width=max(self.chart_width * n_cols + 200, 900),
             autosize=True,
-            margin=dict(l=20, r=20, t=70, b=20),
+            margin=dict(l=20, r=20, t=80, b=20),
             showlegend=False,
         )
         return fig
@@ -314,8 +315,8 @@ class StreamlitView(View):
         item_props = data.loc[data['itemid'] == itemid].iloc[0]
         mean = item_props['trend_mean']
         std = item_props['trend_std']
-        plus_3sigma = mean + self.detect1_lambda_threshold * std
-        minus_3sigma = mean - self.detect1_lambda_threshold * std
+        plus_n_sigma = mean + self.detect1_lambda_threshold * std
+        minus_n_sigma = mean - self.detect1_lambda_threshold * std
         x_vals = df['clock']
 
         fig.add_trace(
@@ -330,7 +331,7 @@ class StreamlitView(View):
         fig.add_trace(
             go.Scatter(
                 x=x_vals,
-                y=[plus_3sigma] * len(x_vals),
+                y=[plus_n_sigma] * len(x_vals),
                 mode="lines",
                 line=dict(dash='dash', color='red'),
                 name="+3σ"
@@ -339,7 +340,7 @@ class StreamlitView(View):
         fig.add_trace(
             go.Scatter(
                 x=x_vals,
-                y=[minus_3sigma] * len(x_vals),
+                y=[minus_n_sigma] * len(x_vals),
                 mode="lines",
                 line=dict(dash='dash', color='blue'),
                 name="-3σ"

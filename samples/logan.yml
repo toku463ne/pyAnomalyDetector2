@@ -16,7 +16,9 @@ logging:
 data_sources:
   test_logan:
     type: "logan"
+    name: "test_logan"
     base_url: '{{ LOGAN_BASE_URL }}'
+    minimal_group_size: 1000
     group_names:
       hw/nw: 
         host_names:
@@ -24,3 +26,18 @@ data_sources:
           - NFPFW003
           - SOPHOS-01
           - pfsense67051_openvpn
+
+view_sources:
+  test_logan:
+    type: "logan"
+    name: "test_logan"
+    port: 5000
+    chart_categories:
+      bycluster:
+        name: "By Cluster"
+        one_item_per_host: false
+    layout:
+      chart_width: 400
+      chart_height: 300
+      max_vertical_charts: 4
+      max_horizontal_charts: 3

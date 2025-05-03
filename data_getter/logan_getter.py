@@ -34,7 +34,7 @@ class LoganGetter(DataGetter):
         self.groups = data_source_config['groups']
         self.minimal_group_size = data_source_config.get('minimal_group_size', 1000)
         self.data: Dict[int, pd.DataFrame] = {}
-        self.loggroup_data: Dict[int, pd.DataFrame] = {}
+        self.item_details: pd.DataFrame = pd.DataFrame(columns=['group_name', 'hostid', 'host_name', 'itemid', 'item_name'])
         self.itemIds = []
         self.itemId_map = {}
         self.ms = ModelsSet(self.data_source_name)
@@ -111,8 +111,7 @@ class LoganGetter(DataGetter):
         else:
             return pd.DataFrame(columns=columns)
     
-
-
+    
     
     def _load_loggroups_data(self):
         for hostid in self.hosts:
@@ -122,13 +121,36 @@ class LoganGetter(DataGetter):
                 df.columns = self.loggroups_fields
                 self._map_itemIds(hostid, df['itemid'].tolist())
                 df = self._conv_itemIds(df)
-                self.loggroup_data[hostid] = df
                 itemIds = df['itemid'].tolist()
                 itemIds = list(set(itemIds))
-                for itemId in itemIds:
-                    self.itemid_hostid_map[itemId] = hostid
-            
+                # import to item details
+                group_names = self.get_groups_by_hostid(hostid)
+                if len(group_names) > 0:
+                    for group_name in group_names:
+                        self._load_item_details(df, group_name, hostid)
+        
 
+    def _load_item_details(self, lgdf: pd.DataFrame, group_name: str, hostid: int):
+        # lgdf.columns = ['itemid', 'count', 'score', 'text']
+        # details fields = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
+        detaildf = lgdf[['itemid', 'text']].copy()
+        detaildf['group_name'] = group_name
+        detaildf['hostid'] = hostid
+        detaildf['host_name'] = self.hosts[hostid]
+        detaildf.columns = ['itemid', 'item_name', 'group_name', 'hostid', 'host_name']
+        detaildf = detaildf[['group_name', 'hostid', 'host_name', 'itemid', 'item_name']]
+        self.item_details = pd.concat([self.item_details, detaildf], ignore_index=True)
+
+        # load itemid_hostid_map
+        self.itemid_hostid_map.update({row['itemid']: hostid for _, row in detaildf.iterrows()})
+
+    def get_groups_by_hostid(self, hostid: int) -> List[str]:
+        # get groups by hostid
+        groups = []
+        for group_name, group in self.groups.items():
+            if hostid in group:
+                groups.append(group_name)
+        return groups
 
     def _import_host_data(self, hostid: int):
         lgdf = self._get_data_by_http(hostid, 'logGroups.csv', self.loggroups_fields, True)
@@ -136,6 +158,9 @@ class LoganGetter(DataGetter):
         # filter by minimal_group_size
         if len(lgdf) > 0:
             lgdf = lgdf[lgdf['count'] >= self.minimal_group_size]
+
+        if len(lgdf) == 0:
+            return
 
         # get itemids
         itemIds = lgdf['itemid'].tolist()
@@ -147,8 +172,12 @@ class LoganGetter(DataGetter):
 
         # convert itemids to unique itemids
         lgdf = self._conv_itemIds(lgdf)
-        self.loggroup_data[hostid] = lgdf
 
+        # import to item details
+        group_names = self.get_groups_by_hostid(hostid)
+        if len(group_names) > 0:
+            for group_name in group_names:
+                self._load_item_details(lgdf, group_name, hostid)
 
         self._get_data_by_http(hostid, 'logGroups_last.csv', self.last_loggroups_fields, True)
 
@@ -179,7 +208,7 @@ class LoganGetter(DataGetter):
                     itemIds: List[int] = [],
                     group_names: List[str] = [],
                     max_itemIds=0) -> List[int]:
-        if len(self.loggroup_data) == 0:
+        if len(self.item_details) == 0:
             self.import_data()
 
         itemIds = itemIds if len(itemIds) > 0 else self.itemIds
@@ -190,15 +219,12 @@ class LoganGetter(DataGetter):
 
         itemIds2 = []
         if len(item_names) > 0:
-            # filter loggroups_data['text'] by item_names regex
-            for hostid in self.hosts:
-                data = self.loggroup_data[hostid]
-                itemIds2.extend(data[data['text'].str.contains('|'.join(item_names))]['itemid'].tolist())
+            # filter item_details by item_names
+            item_details = self.item_details[self.item_details['item_name'].isin(item_names)]
+            itemIds2 = item_details['itemid'].tolist()
         else:
-            for hostid in self.hosts:
-                data = self.loggroup_data[hostid]
-                itemIds2.extend(data['itemid'].tolist())
-
+            itemIds2 = self.item_details['itemid'].tolist()
+        
         itemIds2 = list(set(itemIds2))
 
         if len(itemIds) > 0:
@@ -237,47 +263,40 @@ class LoganGetter(DataGetter):
     
 
     def get_items_details(self, itemIds: List[int] = []) -> pd.DataFrame:
-        if len(self.loggroup_data) == 0:
+        if len(self.item_details) == 0:
             self.import_data()
-        #loggroups_fields = ['itemid', 'count', 'score', 'text']
-        #final df           ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
-        data = pd.DataFrame(columns=['group_name', 'hostid', 'host_name', 'itemid', 'item_name'])
-        for group_name, group in self.groups.items():
-            for hostid, host_name in group.items():
-                loggrp = self.loggroup_data[hostid]
-                if len(itemIds) > 0:
-                    loggrp = loggrp[loggrp['itemid'].isin(itemIds)]
-                if len(loggrp) == 0:
-                    continue
-                loggrp['group_name'] = group_name
-                loggrp['hostid'] = hostid
-                loggrp['host_name'] = host_name
-                loggrp = loggrp[['group_name', 'hostid', 'host_name', 'itemid', 'text']]
-                loggrp.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
-                data = pd.concat([data, loggrp])
-        return data
+            
+        if len(itemIds) == 0:
+            return self.item_details
+        else:
+            return self.item_details[self.item_details['itemid'].isin(itemIds)]
+
     
 
     def get_item_detail(self, itemId: int) -> Dict:
+        if len(self.item_details) == 0:
+            self.import_data()
         data ={}
         hostid = self.itemid_hostid_map[itemId]
-        loggroups_data_path = self._get_loggroups_data_path(hostid)
+        file_name = "logGroups.csv"
+        loggroups_data_path = f"{self.data_dir}/{self.hosts[hostid]}_{file_name}"
         if os.path.exists(loggroups_data_path):
             df = pd.read_csv(loggroups_data_path)
             df.columns = self.loggroups_fields
             df = self._conv_itemIds(df)
-            data['loggroups'] = df[df['itemid'] == itemId].to_dict(orient='records')
-        else:
-            data['loggroups'] = pd.DataFrame(columns=self.loggroups_fields)
+            data = df[df['itemid'] == itemId].to_dict(orient='records')[0]
+        
 
-        loggroups_last_data_path = self._get_loggroups_lastdata_path(hostid)
+        file_name = "logGroups_last.csv"
+        loggroups_last_data_path = f"{self.data_dir}/{self.hosts[hostid]}_{file_name}"
         if os.path.exists(loggroups_last_data_path):
             df = pd.read_csv(loggroups_last_data_path)
-            df.columns = ["groupId","lastUpdate","count","score","text"]
+            df.columns = self.last_loggroups_fields
             df = self._conv_itemIds(df)
-            data['loggroups_last'] = df[df['itemid'] == itemId].to_dict(orient='records')
-        else:
-            data['loggroups_last'] = pd.DataFrame(columns=self.loggroups_fields)
+            last_data = df[df['itemid'] == itemId].to_dict(orient='records')[0]
+        
+        data["last_text"] = last_data["text"]
+        data["host_name"] = self.hosts[hostid]
 
         return data
     
