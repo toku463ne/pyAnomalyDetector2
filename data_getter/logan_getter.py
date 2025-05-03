@@ -24,8 +24,9 @@ import utils.config_loader as config_loader
 from models.models_set import ModelsSet
 
 class LoganGetter(DataGetter):
-    fields = ['itemid', 'clock', 'value']
+    history_fields = ['itemid', 'clock', 'value']
     loggroups_fields = ['itemid', 'count', 'score', 'text']
+    last_loggroups_fields = ["itemid","lastUpdate","count","score","text"]
 
     def init_data_source(self, data_source_config):
         self.data_source_name = data_source_config['name']
@@ -87,24 +88,35 @@ class LoganGetter(DataGetter):
         self.itemId_map.update(itemId_map)
         return new_itemIds
 
-
     def _conv_itemIds(self, df: pd.DataFrame) -> pd.DataFrame:
         # convert itemid according to itemId_map
         df['itemid'] = df['itemid'].map(self.itemId_map).fillna(df['itemid'])
-
         return df
+      
+   
+
+    def _get_data_by_http(self, hostid: int, file_name: str, 
+                          columns: List[str],
+                          write_to_csv = False) -> pd.DataFrame:
+        url = f"{self.base_url}/{self.hosts[hostid]}/{file_name}"
+        csv_path = f"{self.data_dir}/{self.hosts[hostid]}_{file_name}"
+        response = requests.get(url, headers=self.headers)
+        if response.status_code == 200:
+            df = pd.read_csv(url)
+            df.columns = columns
+            # save to file
+            if write_to_csv:
+                df.to_csv(csv_path, index=False)
+            return df
+        else:
+            return pd.DataFrame(columns=columns)
     
-    def _get_loggroups_data_path(self, hostid: int) -> str:
-        host_name = self.hosts[hostid]
-        return f"{self.data_dir}/{host_name}_loggroups.csv"
-    
-    def _get_loggroups_lastdata_path(self, hostid: int) -> str:
-        host_name = self.hosts[hostid]
-        return f"{self.data_dir}/{host_name}_loggroups_last.csv"
+
+
     
     def _load_loggroups_data(self):
         for hostid in self.hosts:
-            data_path = self._get_loggroups_data_path(hostid)
+            data_path = f"{self.data_dir}/{self.hosts[hostid]}_loggroups.csv"
             if os.path.exists(data_path):
                 df = pd.read_csv(data_path)
                 df.columns = self.loggroups_fields
@@ -115,54 +127,34 @@ class LoganGetter(DataGetter):
                 itemIds = list(set(itemIds))
                 for itemId in itemIds:
                     self.itemid_hostid_map[itemId] = hostid
-                
+            
 
 
     def _import_host_data(self, hostid: int):
-        host_name = self.hosts[hostid]
-        # get loggroups data
-        url = self.base_url + '/' + host_name + '/logGroups.csv'
-        response = requests.get(url, headers=self.headers)
-        if response.status_code == 200:
-            df = pd.read_csv(url)
-            df.columns = self.loggroups_fields
-            # save to file
-            df.to_csv(self._get_loggroups_data_path(hostid), index=False)
-        else:
-            df = pd.DataFrame(columns=self.loggroups_fields)
-        # filter by minimal_group_size
-        if len(df) > 0:
-            df = df[df['count'] >= self.minimal_group_size]
+        lgdf = self._get_data_by_http(hostid, 'logGroups.csv', self.loggroups_fields, True)
 
-        url = self.base_url + '/' + host_name + '/logGroups_last.csv'
-        response = requests.get(url, headers=self.headers)
-        if response.status_code == 200:
-            df_last = pd.read_csv(url)
-            df_last.columns = self.loggroups_fields
-            # save to file
-            df_last.to_csv(self._get_loggroups_lastdata_path(hostid), index=False)
-        
+        # filter by minimal_group_size
+        if len(lgdf) > 0:
+            lgdf = lgdf[lgdf['count'] >= self.minimal_group_size]
 
         # get itemids
-        itemIds = df['itemid'].tolist()
+        itemIds = lgdf['itemid'].tolist()
         itemIds = list(set(itemIds))
-        itemIds = self._map_itemIds(hostid, itemIds)
 
+        # map to unique itemids
+        itemIds = self._map_itemIds(hostid, itemIds)
         self.itemIds.extend(itemIds)
 
-        df = self._conv_itemIds(df)
-        self.loggroup_data[hostid] = df
+        # convert itemids to unique itemids
+        lgdf = self._conv_itemIds(lgdf)
+        self.loggroup_data[hostid] = lgdf
+
+
+        self._get_data_by_http(hostid, 'logGroups_last.csv', self.last_loggroups_fields, True)
 
         
         # get metrics data
-        url = self.base_url + '/' + host_name + '/history.csv'
-        response = requests.get(url, headers=self.headers)
-        if response.status_code == 200:
-            df = pd.read_csv(url)
-            df.columns = self.fields
-        else:
-            df = pd.DataFrame(columns=self.fields)
-
+        df = self._get_data_by_http(hostid, 'history.csv', self.history_fields, False)
         itemIds = df['itemid'].tolist()
         itemIds = list(set(itemIds))
         itemIds = self._map_itemIds(hostid, itemIds)
@@ -253,11 +245,13 @@ class LoganGetter(DataGetter):
         for group_name, group in self.groups.items():
             for hostid, host_name in group.items():
                 loggrp = self.loggroup_data[hostid]
+                if len(itemIds) > 0:
+                    loggrp = loggrp[loggrp['itemid'].isin(itemIds)]
+                if len(loggrp) == 0:
+                    continue
                 loggrp['group_name'] = group_name
                 loggrp['hostid'] = hostid
                 loggrp['host_name'] = host_name
-                if len(itemIds) > 0:
-                    loggrp = loggrp[loggrp['itemid'].isin(itemIds)]
                 loggrp = loggrp[['group_name', 'hostid', 'host_name', 'itemid', 'text']]
                 loggrp.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
                 data = pd.concat([data, loggrp])
@@ -288,7 +282,8 @@ class LoganGetter(DataGetter):
         return data
     
     def get_item_html_title(self, itemId: int) -> str:
-        data = self.get_items_details([itemId]).iloc[0]
+        data = self.get_items_details([itemId])
+        data = data.iloc[0]
         return f"""<a href='/?page=details&itemid={itemId}' target='_self' style='font-size:12px;'>
             {itemId}<br>
             {data.host_name[:20]}<br>

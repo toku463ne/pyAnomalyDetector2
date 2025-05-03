@@ -149,7 +149,7 @@ class StreamlitView(View):
                 )
 
         fig.update_layout(
-            height=max(self.chart_height * n_rows + 100, 400),
+            height=max(self.chart_height * n_rows + 100, 500),
             width=max(self.chart_width * n_cols + 200, 900),
             autosize=True,
             margin=dict(l=20, r=20, t=70, b=20),
