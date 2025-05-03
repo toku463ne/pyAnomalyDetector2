@@ -19,13 +19,13 @@ data_sources:
     name: "test_logan"
     base_url: '{{ LOGAN_BASE_URL }}'
     minimal_group_size: 1000
-    group_names:
-      hw/nw: 
-        host_names:
-          - IMTFW001
-          - NFPFW003
-          - SOPHOS-01
-          - pfsense67051_openvpn
+    groups:
+      firewall: 
+        - IMTFW001
+        - NFPFW003
+      proxy:
+        - SOPHOS-01
+        - pfsense67051_openvpn
 
 view_sources:
   test_logan:
