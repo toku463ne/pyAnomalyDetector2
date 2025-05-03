@@ -5,10 +5,11 @@ After=network.target
 [Service]
 User={{ ANOMDEC_STREAMLIT_USER }}
 WorkingDirectory={{ ANOMDEC_STREAMLIT_WORKING_DIR }}
-ExecStart={{ ANOMDEC_STREAMLIT_PATH }} run {{ ANOMDEC_STREAMLIT_APP_PATH }} --server.port={{ ANOMDEC_STREAMLIT_PORT }} --server.address={{ ANOMDEC_STREAMLIT_HOST }}
+ExecStart={{ ANOMDEC_STREAMLIT_PATH }} run {{ ANOMDEC_STREAMLIT_APP_PATH }} --server.port={{ ANOMDEC_STREAMLIT_PORT }} --server.address={{ ANOMDEC_STREAMLIT_HOST }} -- -c {{ ANOMDEC_STREAMLIT_CONFIG }}
 Restart=always
 Environment="PATH={{ HOME }}/venv/bin:$PATH"
 Environment="PYTHONPATH={{ ANOMDEC_STREAMLIT_WORKING_DIR }}"
+Environment="ANOMDEC_SECRET_PATH={{ ANOMDEC_SECRET_PATH }}"
 
 
 [Install]
