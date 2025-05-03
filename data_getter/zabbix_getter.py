@@ -338,5 +338,9 @@ class ZabbixGetter(DataGetter):
         # link to zabbix chart 
         # http://{{ api_url }}/history.php?itemids%5B0%5D={{ itemid }}&period=now-30d&action=showgraph
 
-        return f"""<a href="http://{self.api_url}/zabbix/history.php?itemids%5B0%5D={itemId}&period=now-30d&action=showgraph" target="_blank">
+        detail = self.get_item_detail(itemId)
+
+        return f"""<a href="{self.api_url}/history.php?itemids%5B0%5D={itemId}&period=now-30d" target="_blank">
+        {detail["host_name"][:50]}<br>
+        {detail["item_name"][:50]}<br>
         {itemId}</a>"""

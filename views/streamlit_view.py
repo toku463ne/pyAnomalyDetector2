@@ -196,7 +196,8 @@ class StreamlitView(View):
             properties = pdata.set_index("itemid").T.to_dict()
 
             if opts.get("one_item_per_host", True):
-                data = data.groupby(groupby_keys).agg({"itemid": "min"}).reset_index()
+                groupby_keys_no_itemid = [k for k in groupby_keys if k != "itemid"]
+                data = data.groupby(groupby_keys_no_itemid).agg({"itemid": "min"}).reset_index()
             data = data.sort_values(by=sort_keys)
             data = data[drop_keys]
             data = data.drop_duplicates(subset=drop_keys)
@@ -208,6 +209,8 @@ class StreamlitView(View):
                 if len(itemIds_block) == 0:
                     continue
 
+                chart_group_name = f"{data_source_name}/{group_name}"
+
                 dg = data_getter.get_data_getter(data_source)
                 t_df = dg.get_trends_data(trend_start, history_start, itemIds_block)
                 h_df = dg.get_history_data(history_start, history_end, itemIds_block)
@@ -215,12 +218,12 @@ class StreamlitView(View):
                 titles_block = {}
                 for itemId in itemIds_block:
                     titles_block[itemId] = dg.get_item_html_title(itemId)
-                if group_name in charts:
-                    charts[group_name] = pd.concat([charts[group_name], df])
-                    titles_block.update(titles[group_name])
+                if chart_group_name in charts:
+                    charts[chart_group_name] = pd.concat([charts[chart_group_name], df])
+                    titles_block.update(titles[chart_group_name])
                 else:
-                    charts[group_name] = df
-                    titles[group_name] = titles_block
+                    charts[chart_group_name] = df
+                    titles[chart_group_name] = titles_block
 
         charts_fig = {}
         for group_name in charts:
@@ -362,10 +365,13 @@ def run(config: Dict) -> None:
     print(f"Query Params: {query_params}")
     #print(f"Config: {config}")
 
-    view_source_name = query_params.get("source", "")
+    view_source_name = query_params.get("view_source", "")
     if view_source_name == "":
         for view_source_name, view_source in config["view_sources"].items():
-            break
+            if view_source["type"] == "streamlit":
+                break
+    else:
+        view_source = config["view_sources"][view_source_name]
     
     v = StreamlitView(config, view_source)
 

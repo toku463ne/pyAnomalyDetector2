@@ -17,3 +17,4 @@ plotly-express
 fastdtw
 debugpy
 streamlit
+dotenv

@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from string import Template
 # load environment variables from .env file
 load_dotenv()
 
@@ -7,7 +8,8 @@ load_dotenv()
 with open('templates/nginx_streamlitserver.conf.j2', 'r') as f:
     nginx_conf = f.read()
 
-nginx_conf = nginx_conf.format(**os.environ)
+
+nginx_conf = Template(nginx_conf).substitute(os.environ)
 with open('/etc/nginx/sites-available/streamlitserver.conf', 'w') as f:
     f.write(nginx_conf)
 

@@ -27,32 +27,30 @@ data_sources:
       proxy:
         3: SOPHOS-01
         4: pfsense67051_openvpn
+  zabbix: 
+    type: "zabbix"
+    host: '{{ ZABBIX_DB_HOST }}'
+    api_url: "{{ ZABBIX_API_URL }}"
+    dbname: '{{ ZABBIX_DB_NAME }}'
+    user: '{{ ZABBIX_DB_USER }}'
+    password: '{{ ZABBIX_DB_PASSWORD }}'
+    port: 5432
+    retries: 3
 
 view_sources:
-  logan:
-    type: "logan"
-    name: "logan"
+  streamlit:
+    name: "streamlit"
+    type: streamlit
     port: 5000
     chart_categories:
       bycluster:
         name: "By Cluster"
         one_item_per_host: false
+      bygroup:
+        name: "By Group"
+        one_item_per_host: true
     layout:
       chart_width: 400
       chart_height: 300
       max_vertical_charts: 4
       max_horizontal_charts: 3
-
-##################################################
-#  trends: Configuration for trend analysis
-##################################################
-trends_interval: 7200
-trends_retention: 30
-trends_min_count: 30
-
-##################################################
-#  history: Configuration for history analysis
-##################################################
-history_interval: 3600
-history_retention: 24
-history_recent_retention: 12

@@ -2,7 +2,7 @@ admdb:
   host: '{{ ADM_DB_HOST }}'
   user: anomdec
   password: '{{ ADM_DB_PASSWORD }}'
-  dbname: anomdec
+  dbname: '{{ ADM_DB_DB_NAME }}'
   port: 5432
   schema: public
 
@@ -14,7 +14,7 @@ logging:
   log_dir: "{{ HOME }}/anomdec/logs"
 
 data_sources:
-  test_zabbix: 
+  zabbix: 
     type: "zabbix"
     host: '{{ ZABBIX_DB_HOST }}'
     api_url: "{{ ZABBIX_API_URL }}"
@@ -87,13 +87,13 @@ data_sources:
       
 
 view_sources:
-  test_zabbix:
+  zabbix:
     dashboard_name: "anomaly_check_new"
     type: "zabbix_dashboard"
     api_url: "{{ ZABBIX_API_URL }}"
     user: "{{ ZABBIX_API_USER }}"
     password: "{{ ZABBIX_API_PASSWORD }}"
-    data_source_name: "test_zabbix"
+    data_source_name: "zabbix"
 
 group_names:
   - hw/nw

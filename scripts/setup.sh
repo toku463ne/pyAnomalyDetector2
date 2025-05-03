@@ -1,7 +1,7 @@
 #!/bin/bash
 
 script_folder=$(dirname "$(realpath "$0")")
-cd $script_folder
+#cd $script_folder
 
 set -eu
 
@@ -20,10 +20,12 @@ virtualenv $HOME/venv
 source $HOME/venv/bin/activate
 
 # Install required Python packages
+echo "current dir: $(pwd)"
+echo pip install -r requirements.txt
 pip install -r requirements.txt
 
 # deploying streamlit with nginx
-sudo python scripts/setup_streamlit.py
+python scripts/setup_streamlit.py
 sudo systemctl reload nginx
 sudo systemctl daemon-reload
 sudo systemctl enable streamlit.service

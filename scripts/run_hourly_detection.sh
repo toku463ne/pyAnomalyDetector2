@@ -13,7 +13,7 @@ if [ "$ANOMDEC_SECRET_PATH" == "" ]; then
     export ANOMDEC_SECRET_PATH="$HOME/.creds/anomdec.yaml"
 fi
 end=$(date +"%s")
-end=$(expr $end - 300)
+end=$(expr $end - 600)
 echo "$(date) python3 detect_anomalies.py -c $config_path --end $end"
 date;time nice python3 detect_anomalies.py -c $config_path --end $end
 
