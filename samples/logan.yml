@@ -2,9 +2,9 @@ admdb:
   host: '{{ ADM_DB_HOST }}'
   user: anomdec
   password: '{{ ADM_DB_PASSWORD }}'
-  dbname: anomdec
+  dbname: '{{ ADM_DB_DB_NAME }}'
   port: 5432
-  schema: public
+  schema: '{{ ADM_DB_SCHEMA }}'
 
 logging:
   enabled: true
@@ -19,13 +19,14 @@ data_sources:
     name: "test_logan"
     base_url: '{{ LOGAN_BASE_URL }}'
     minimal_group_size: 1000
+    data_dir: "{{ HOME }}/anomdec/anomdec/logandata"
     groups:
       firewall: 
-        - IMTFW001
-        - NFPFW003
+        1: IMTFW001
+        2: NFPFW003
       proxy:
-        - SOPHOS-01
-        - pfsense67051_openvpn
+        3: SOPHOS-01
+        4: pfsense67051_openvpn
 
 view_sources:
   test_logan:

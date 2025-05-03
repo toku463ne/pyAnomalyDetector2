@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 import streamlit as st
 st.set_page_config(layout="wide")
@@ -7,7 +8,7 @@ from typing import List, Dict
 import pandas as pd
 import os
 
-import __init__
+#import __init__
 from views.view import View
 from models.models_set import ModelsSet
 import data_getter
@@ -23,7 +24,7 @@ default_chart_categories = {
 }
 
 class StreamlitView(View):
-    def __init__(self, config: Dict, view_source: Dict, data_sources: Dict) -> None:
+    def __init__(self, config: Dict, view_source: Dict) -> None:
         self.trends_interval = config["trends_interval"]
         self.trends_retention = config["trends_retention"]
         self.history_interval = config["history_interval"]
@@ -46,7 +47,7 @@ class StreamlitView(View):
         self.chart_width = layout.get("chart_width", 600)
         self.chart_height = layout.get("chart_height", 300)
         self.chart_type = layout.get("chart_type", "line")
-        self.data_sources = data_sources
+        self.data_sources = config["data_sources"]
 
     def _generate_charts_in_group(self, df: pd.DataFrame, properties: Dict, titles: Dict) -> go.Figure:
         itemIds = df['itemid'].unique()
@@ -240,7 +241,7 @@ class StreamlitView(View):
         return self._generate_charts_by_category(CAT_BY_CLUSTER)
 
 
-    def run_root(self) -> None:
+    def show_charts(self) -> None:
         st.title("Anomaly Detector Charts")
 
         categoryid = st.radio(
@@ -265,7 +266,7 @@ class StreamlitView(View):
             st.warning(f"Category '{categoryid}' is not supported in Streamlit view.")
 
 
-    def show_details(self, itemid: int) -> None:
+    def show_item_details(self, itemid: int) -> None:
         st.title(f"Details for Item ID: {itemid}")
 
         # Find the data source containing this itemid
@@ -356,20 +357,28 @@ class StreamlitView(View):
         st.plotly_chart(fig, use_container_width=True, key=f"details_plotly_chart_{itemid}")
 
 
+def run(config: Dict) -> None:
+    query_params = st.query_params
+    print(f"Query Params: {query_params}")
+    #print(f"Config: {config}")
 
-    def run(self) -> None:
-        query_params = st.query_params
-        print(f"Query Params: {query_params}")
- 
-        # http://localhost:8501/?page=details&itemid=1174353226900002
-        page = query_params.get("page", "")
-       
-        if page == "details":
-            itemid = int(query_params.get("itemid", 0))
-            if itemid > 0:
-                self.show_details(itemid)
-            else:
-                st.error("Invalid itemid")
+    view_source_name = query_params.get("source", "")
+    if view_source_name == "":
+        for view_source_name, view_source in config["view_sources"].items():
+            break
+    
+    v = StreamlitView(config, view_source)
+
+    page = query_params.get("page", "")    
+    if page == "details":
+        itemid = int(query_params.get("itemid", 0))
+        if itemid > 0:
+            v.show_item_details(itemid)
         else:
-            self.run_root()
+            st.error("Invalid itemid")
+    else:
+        v.show_charts()
+
+
+
         

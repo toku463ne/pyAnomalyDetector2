@@ -302,6 +302,7 @@ class LoganGetter(DataGetter):
     
     def get_item_html_title(self, itemId: int) -> str:
         data = self.get_items_details([itemId])
+        print({'itemId': itemId, 'data': data})
         data = data.iloc[0]
         return f"""<a href='/?page=details&itemid={itemId}' target='_self' style='font-size:12px;'>
             {itemId}<br>
