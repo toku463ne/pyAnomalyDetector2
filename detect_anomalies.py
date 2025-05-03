@@ -116,12 +116,16 @@ def classify_charts(endep: int):
         d = Detector(data_source_name, data_sources[data_source_name])
         anom = ModelsSet(data_source_name).anomalies
         anom_itemIds = anom.get_itemids()
+        if len(anom_itemIds) == 0:
+            continue
         d.update_history(endep, anom_itemIds)
         classified_itemIds.extend(anom_itemIds)
     if len(classified_itemIds) > 1:
         log("classifying charts")
         clusters, _, _ = dbscan.classify_charts(conf, classified_itemIds, endep=endep)
         ModelsSet(data_source_name).anomalies.update_clusterid(clusters)
+    else:
+        log("no anomalies")
 
     log("completed")
 

@@ -4,6 +4,7 @@ envfile=$1
 if [ "$envfile" == "" ]; then
     envfile="scripts/setup.env"
 fi
+source $envfile
 
 script_folder=$(dirname "$(realpath "$0")")
 #cd $script_folder
