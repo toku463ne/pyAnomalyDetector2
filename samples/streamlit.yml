@@ -20,7 +20,7 @@ data_sources:
     base_url: '{{ LOGAN_BASE_URL }}'
     minimal_group_size: 1000
     top_n: 10
-    data_dir: "{{ HOME }}/anomdec/anomdec/logandata"
+    data_dir: "{{ HOME }}/anomdec/logandata"
     groups:
       firewall: 
         1: IMTFW001

@@ -301,11 +301,15 @@ class LoganGetter(DataGetter):
 
         return data
     
-    def get_item_html_title(self, itemId: int) -> str:
+    def get_item_html_title(self, itemId: int, chart_type="") -> str:
         data = self.get_items_details([itemId])
         print({'itemId': itemId, 'data': data})
         data = data.iloc[0]
-        return f"""<a href='/?page=details&itemid={itemId}' style='font-size:12px; target="_blank"'>
+        href = f"/?page=details&itemid={itemId}"
+        if chart_type == "topitems":
+            href += f"&chart_type={chart_type}"
+
+        return f"""<a href='{href}' style='font-size:12px; target="_blank"'>
             {itemId}<br>
             {data.host_name[:20]}<br>
             {data.item_name[:20]}<br>
