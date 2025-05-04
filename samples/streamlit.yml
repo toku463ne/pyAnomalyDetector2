@@ -43,12 +43,12 @@ view_sources:
     type: streamlit
     port: 5000
     chart_categories:
-      bycluster:
-        name: "By Cluster"
-        one_item_per_host: false
       bygroup:
         name: "By Group"
         one_item_per_host: true
+      bycluster:
+        name: "By Cluster"
+        one_item_per_host: false
     layout:
       chart_width: 400
       chart_height: 300

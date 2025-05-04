@@ -59,7 +59,7 @@ class StreamlitView(View):
             rows=n_rows,
             cols=n_cols,
             subplot_titles=[
-            titles.get(itemId, f"""{itemId}<br>
+            titles.get(int(itemId), f"""{itemId}<br>
                     {properties[int(itemId)]['host_name'][:20]}<br>
                     {properties[int(itemId)]['item_name'][:20]}<br>""")
             for itemId in itemIds
@@ -88,6 +88,7 @@ class StreamlitView(View):
             item_df['clock'] = pd.to_datetime(item_df['clock'], unit='s')
             row = (i // n_cols) + 1
             col = (i % n_cols) + 1
+            itemId = int(itemId)
 
             # Decide number of digits based on data range
             y_values = item_df['value']
