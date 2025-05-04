@@ -19,6 +19,7 @@ data_sources:
     name: "logan"
     base_url: '{{ LOGAN_BASE_URL }}'
     minimal_group_size: 1000
+    top_n: 10
     data_dir: "{{ HOME }}/anomdec/anomdec/logandata"
     groups:
       firewall: 

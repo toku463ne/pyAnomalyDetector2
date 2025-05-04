@@ -139,6 +139,7 @@ class LoganGetter(DataGetter):
         detaildf['host_name'] = self.hosts[hostid]
         detaildf.columns = ['itemid', 'item_name', 'group_name', 'hostid', 'host_name']
         detaildf = detaildf[['group_name', 'hostid', 'host_name', 'itemid', 'item_name']]
+        detaildf['item_count'] = lgdf['count']
         self.item_details = pd.concat([self.item_details, detaildf], ignore_index=True)
 
         # load itemid_hostid_map
@@ -304,7 +305,7 @@ class LoganGetter(DataGetter):
         data = self.get_items_details([itemId])
         print({'itemId': itemId, 'data': data})
         data = data.iloc[0]
-        return f"""<a href='/?page=details&itemid={itemId}' target='_self' style='font-size:12px;'>
+        return f"""<a href='/?page=details&itemid={itemId}' style='font-size:12px; target="_blank"'>
             {itemId}<br>
             {data.host_name[:20]}<br>
             {data.item_name[:20]}<br>

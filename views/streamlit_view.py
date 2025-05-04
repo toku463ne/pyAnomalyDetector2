@@ -1,7 +1,6 @@
 import os
 from typing import Dict
 import streamlit as st
-st.set_page_config(layout="wide")
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 from typing import List, Dict
@@ -22,6 +21,7 @@ default_chart_categories = {
     "bycluster": "By Cluster",
     "latest": "Latest"
 }
+radio_order = [CAT_BY_GROUP, CAT_BY_CLUSTER, CAT_LATEST]
 
 class StreamlitView(View):
     def __init__(self, config: Dict, view_source: Dict) -> None:
@@ -160,7 +160,7 @@ class StreamlitView(View):
         )
         return fig
 
-    def _generate_charts_by_category(self, categoryid: str) -> Dict[str, go.Figure]:
+    def _generate_charts_by_category(self, categoryid: str, selected_chart_type: str) -> Dict[str, go.Figure]:
         if categoryid == CAT_BY_GROUP:
             group_key = "group_name"
             opts = self.chart_categories[CAT_BY_GROUP]
@@ -182,10 +182,14 @@ class StreamlitView(View):
         titles = {}
         for data_source_name, data_source in self.data_sources.items():
             ms = ModelsSet(data_source_name)
-            if len(self.itemIds) > 0:
-                data = ms.anomalies.get_data([f"itemid in ({','.join(map(str, self.itemIds))})"])
+            if selected_chart_type == "topitems":
+                m = ms.topitems
             else:
-                data = ms.anomalies.get_data()
+                m = ms.anomalies
+            if len(self.itemIds) > 0:
+                data = m.get_data([f"itemid in ({','.join(map(str, self.itemIds))})"])
+            else:
+                data = m.get_data()
 
             endep = data["created"].max()
             trend_start = endep - self.trends_retention * self.trends_interval
@@ -238,28 +242,43 @@ class StreamlitView(View):
                 round += 1
         return charts_fig
 
-    def _generate_charts_by_group(self) -> Dict[str, go.Figure]:
-        return self._generate_charts_by_category(CAT_BY_GROUP)
+    def _generate_charts_by_group(self, selected_chart_type) -> Dict[str, go.Figure]:
+        return self._generate_charts_by_category(CAT_BY_GROUP, selected_chart_type)
 
-    def _generate_charts_by_cluster(self) -> Dict[str, go.Figure]:
-        return self._generate_charts_by_category(CAT_BY_CLUSTER)
+    def _generate_charts_by_cluster(self, selected_chart_type) -> Dict[str, go.Figure]:
+        return self._generate_charts_by_category(CAT_BY_CLUSTER, selected_chart_type)
 
 
     def show_charts(self) -> None:
         st.title("Anomaly Detector Charts")
 
+        # list box in the top right corner to switch between anomaly/trends
+        st.sidebar.title("chart type")
+        st.sidebar.selectbox(
+            "Select Chart Type",
+            options=["anomalies", "topitems"],
+            index=0,
+            key="chart_type"
+        )
+        
+        selected_chart_type = st.session_state.get("chart_type", "anomalies")
+
+        options = list(self.chart_categories.keys())
+        # sort by radio_order
+        options = sorted(options, key=lambda x: radio_order.index(x) if x in radio_order else len(radio_order))
         categoryid = st.radio(
-            "Select Category",
-            options=list(self.chart_categories.keys()),
+            "Select Grouping Method",
+            options=options,
             format_func=lambda k: self.chart_categories[k]["name"],
             horizontal=True
         )
 
+
         if categoryid in [CAT_BY_GROUP, CAT_BY_CLUSTER]:
             if categoryid == CAT_BY_GROUP:
-                charts = self._generate_charts_by_group()
+                charts = self._generate_charts_by_group(selected_chart_type)
             elif categoryid == CAT_BY_CLUSTER:
-                charts = self._generate_charts_by_cluster()
+                charts = self._generate_charts_by_cluster(selected_chart_type)
             if charts:
                 tab_names = [str(name) for name in charts.keys()]
                 tabs = st.tabs(tab_names)
@@ -365,6 +384,7 @@ def run(config: Dict) -> None:
     query_params = st.query_params
     print(f"Query Params: {query_params}")
     #print(f"Config: {config}")
+    st.set_page_config(layout="wide")
 
     view_source_name = query_params.get("view_source", "")
     if view_source_name == "":

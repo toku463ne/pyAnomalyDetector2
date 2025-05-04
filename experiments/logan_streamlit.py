@@ -1,7 +1,8 @@
 import os, time
 import __init__
 import utils.config_loader as config_loader
-from views.streamlit_view import StreamlitView
+import views.streamlit_view as streamlit_view
+import update_topitems
 
 # streamlit run /home/ubuntu/git/pyAnomalyDetector2/experiments/logan_streamlit.py
 
@@ -13,6 +14,7 @@ data_source = {
     'data_dir': '/tmp/anomdec_test',
     'name': name,
     'type': 'logan',
+    'top_n': 10,
     'groups': {
         'proxy': {
             1: 'SOPHOS-01',
@@ -54,5 +56,9 @@ view_source ={
     } 
 }
 
-v = StreamlitView(conf, view_source, data_sources=conf["data_sources"])
-v.run()
+conf['view_sources'] = {"test_logan": view_source}
+
+endep = 1746108000
+update_topitems.run(conf, endep=endep)
+
+streamlit_view.run(conf)

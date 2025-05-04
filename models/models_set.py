@@ -4,6 +4,7 @@ from models.history_updates import HistoryUpdatesModel
 from models.trends_stats import TrendsStatsModel
 from models.trends_updates import TrendsUpdatesModel
 from models.anomalies import AnomaliesModel
+from models.topitems import TopItemsModel
 from db.postgresql import PostgreSqlDB
 import utils.config_loader as config_loader
 
@@ -28,6 +29,7 @@ class ModelsSet:
         self.trends_stats = TrendsStatsModel(self.data_source_name)
         self.trends_updates = TrendsUpdatesModel(self.data_source_name)
         self.anomalies = AnomaliesModel(self.data_source_name)
+        self.topitems = TopItemsModel(self.data_source_name)
         
         self.models = [
             self.history,
@@ -35,7 +37,8 @@ class ModelsSet:
             self.history_stats,
             self.trends_stats,
             self.trends_updates,
-            self.anomalies
+            self.anomalies,
+            self.topitems
         ]
         
 

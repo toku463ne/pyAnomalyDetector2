@@ -340,7 +340,7 @@ class ZabbixGetter(DataGetter):
 
         detail = self.get_item_detail(itemId)
 
-        return f"""<a href="{self.api_url}/history.php?itemids%5B0%5D={itemId}&period=now-30d" target="_blank">
+        return f"""<a href="{self.api_url}/history.php?itemids%5B0%5D={itemId}&period=now-730h" target="_blank">
         {detail["host_name"][:50]}<br>
         {detail["item_name"][:50]}<br>
         {itemId}</a>"""

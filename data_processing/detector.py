@@ -572,7 +572,7 @@ class Detector:
 
 
     # group_map is a dict of itemId to group_name
-    def update_anomalies(self, created: int, itemIds: List[int]=[], group_map: Dict[int, str] = {}):
+    def get_items_details(self, created: int, itemIds: List[int]=[], group_map: Dict[int, str] = {}):
         dg = self.dg
         ms = self.ms
         if len(itemIds) == 0:
@@ -597,7 +597,7 @@ class Detector:
         # merge with df
         df = pd.merge(df, trends_stats, on='itemid', how='inner')
         # rename columns
-        df.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name', 'trend_mean', 'trend_std']
+        df.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name', 'item_count', 'trend_mean', 'trend_std']
 
         df['created'] = created
         df['clusterid'] = -1
@@ -615,6 +615,26 @@ class Detector:
         df['trend_std'] = df['trend_std'].astype(float)
         df['created'] = df['created'].astype(int)
         
-        ms.anomalies.insert_data(df)
+        return df
+        
 
+    def update_anomalies(self, created: int, itemIds: List[int]=[], group_map: Dict[int, str] = {}):
+        ms = self.ms
+        df = self.get_items_details(created, itemIds, group_map)
+        ms.anomalies.insert_data(df)
         ms.anomalies.delete_old_entries(created - self.anomaly_keep_secs)
+
+
+    def update_topitems(self, created: int, itemIds: List[int]=[], group_map: Dict[int, str] = {}, top_n: int = 0):
+        ms = self.ms
+        df = self.get_items_details(created, itemIds, group_map)
+        if df.empty:
+            return
+        # get top_n items
+        if top_n > 0:
+            df = df.nlargest(top_n, 'item_count')
+
+        ms.topitems.insert_data(df)
+        ms.topitems.delete_old_entries(created - self.anomaly_keep_secs)
+
+        
