@@ -250,7 +250,6 @@ class StreamlitView(View):
 
 
     def show_charts(self) -> None:
-        st.title("Anomaly Detector Charts")
 
         # list box in the top right corner to switch between anomaly/trends
         st.sidebar.title("chart type")
@@ -262,6 +261,11 @@ class StreamlitView(View):
         )
         
         selected_chart_type = st.session_state.get("chart_type", "anomalies")
+
+        if selected_chart_type == "topitems":
+            st.title("Top Items Charts")
+        else:
+            st.title("Anomaly Detector Charts")
 
         options = list(self.chart_categories.keys())
         # sort by radio_order
