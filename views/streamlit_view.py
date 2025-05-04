@@ -180,6 +180,7 @@ class StreamlitView(View):
 
         charts = {}
         titles = {}
+        properties = {}
         for data_source_name, data_source in self.data_sources.items():
             ms = ModelsSet(data_source_name)
             if selected_chart_type == "topitems":
@@ -198,7 +199,7 @@ class StreamlitView(View):
 
             pdata = data[prop_keys]
             pdata = pdata.sort_values("created").drop_duplicates(subset=prop_keys[:-3], keep="last")
-            properties = pdata.set_index("itemid").T.to_dict()
+            properties.update(pdata.set_index("itemid").T.to_dict())
 
             if opts.get("one_item_per_host", True):
                 groupby_keys_no_itemid = [k for k in groupby_keys if k != "itemid"]
