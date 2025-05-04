@@ -632,7 +632,7 @@ class Detector:
             return
         # get top_n items
         if top_n > 0:
-            df = df.nlargest(top_n, 'item_count')
+            df = df.groupby('hostid', group_keys=False).apply(lambda x: x.nlargest(top_n, 'item_count')).reset_index(drop=True)
 
         ms.topitems.insert_data(df)
         ms.topitems.delete_old_entries(created - self.anomaly_keep_secs)

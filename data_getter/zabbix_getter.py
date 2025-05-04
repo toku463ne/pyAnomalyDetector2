@@ -334,13 +334,16 @@ class ZabbixGetter(DataGetter):
 
         return group_map
     
-    def get_item_html_title(self, itemId: int) -> str:
+    def get_item_html_title(self, itemId: int, chart_type="") -> str:
         # link to zabbix chart 
         # http://{{ api_url }}/history.php?itemids%5B0%5D={{ itemid }}&period=now-30d&action=showgraph
 
         detail = self.get_item_detail(itemId)
+        href = f"{self.api_url}/history.php?itemids%5B0%5D={itemId}&period=now-730h"
+        if chart_type == "topitems":
+            href += f"&chart_type={chart_type}"
 
-        return f"""<a href="{self.api_url}/history.php?itemids%5B0%5D={itemId}&period=now-730h" target="_blank">
+        return f"""<a href="{href}" target="_blank">
         {detail["host_name"][:50]}<br>
         {detail["item_name"][:50]}<br>
         {itemId}</a>"""

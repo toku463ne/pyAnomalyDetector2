@@ -223,7 +223,7 @@ class StreamlitView(View):
                 df = pd.concat([t_df, h_df])
                 titles_block = {}
                 for itemId in itemIds_block:
-                    titles_block[itemId] = dg.get_item_html_title(itemId)
+                    titles_block[itemId] = dg.get_item_html_title(itemId, selected_chart_type)
                 if chart_group_name in charts:
                     charts[chart_group_name] = pd.concat([charts[chart_group_name], df])
                     titles_block.update(titles[chart_group_name])
@@ -290,14 +290,18 @@ class StreamlitView(View):
             st.warning(f"Category '{categoryid}' is not supported in Streamlit view.")
 
 
-    def show_item_details(self, itemid: int) -> None:
+    def show_item_details(self, itemid: int, chart_type: str) -> None:
         st.title(f"Details for Item ID: {itemid}")
 
         # Find the data source containing this itemid
         found = False
         for data_source_name, data_source in self.data_sources.items():
-            ms = ModelsSet(data_source_name)
-            data = ms.anomalies.get_data([f"itemid = {itemid}"])
+            if chart_type == "topitems":
+                m = ModelsSet(data_source_name).topitems
+            else:
+                m = ModelsSet(data_source_name).anomalies
+
+            data = m.get_data([f"itemid = {itemid}"])
             if not data.empty:
                 found = True
                 break
@@ -398,10 +402,11 @@ def run(config: Dict) -> None:
     v = StreamlitView(config, view_source)
 
     page = query_params.get("page", "")    
+    chart_type = query_params.get("chart_type", "")
     if page == "details":
         itemid = int(query_params.get("itemid", 0))
         if itemid > 0:
-            v.show_item_details(itemid)
+            v.show_item_details(itemid, chart_type)
         else:
             st.error("Invalid itemid")
     else:
